@@ -3,33 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Mi Golf v5.2</title>
+    <title>Mi Golf v5.3</title>
     <style>
         :root { 
             --primary: #1b5e20; --bg: #f0f4f0; --white: #ffffff; --accent: #ff9800; --text: #333; --gir: #673ab7; 
         }
         
-        /* FIX: Evita el pull-to-refresh y el scroll elástico */
+        /* BLOQUEO DE NAVEGADOR */
         html, body { 
-            height: 100dvh; 
-            width: 100vw;
-            margin: 0; 
-            padding: 0;
-            overflow: hidden; 
-            overscroll-behavior-y: contain;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            height: 100dvh; width: 100vw; margin: 0; padding: 0;
+            overflow: hidden; touch-action: none; /* Evita que la ventana se mueva */
+            overscroll-behavior: none;
+            font-family: -apple-system, system-ui, sans-serif;
             background: var(--bg);
-            color: var(--text);
         }
 
         header { 
-            background: var(--primary); color: white; padding: 4px; text-align: center; 
-            font-weight: bold; height: 20px; font-size: 0.9rem; 
+            background: var(--primary); color: white; text-align: center; 
+            font-weight: bold; height: 30px; line-height: 30px; font-size: 0.9rem;
         }
 
+        /* CONTENEDOR PRINCIPAL OCUPA EL RESTO */
         .container { 
-            height: calc(100dvh - 28px); 
-            display: flex; flex-direction: column; padding: 4px; box-sizing: border-box; 
+            height: calc(100dvh - 30px); 
+            display: flex; flex-direction: column; width: 100%;
         }
 
         .screen { 
@@ -37,145 +34,148 @@
         }
         .active { display: flex; }
 
-        /* Botones ajustados */
-        button { 
-            background: white; border: 1px solid #ccc; padding: 8px; border-radius: 8px; 
-            font-weight: bold; cursor: pointer; font-size: 0.8rem; margin: 2px 0; 
-        }
-        .btn-large { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; font-size: 1rem; }
-        .btn-sec { width: 100%; background: #666; color: white; border: none; }
-        .btn-accent { width: 100%; background: var(--accent); color: white; border: none; }
-        .btn-gir { background: var(--white); border: 2px solid var(--gir); color: var(--gir); flex: 1; padding: 6px; }
-        .btn-gir.selected { background: var(--gir); color: white; }
-
-        /* Mapa: ocupa el espacio disponible sin empujar */
-        .map-wrapper { 
-            position: relative; background: white; border-radius: 8px; overflow: hidden; 
-            border: 1px solid #ddd; flex: 1; width: 100%; min-height: 0; 
-        }
-        .map-wrapper img { width: 100%; height: 100%; object-fit: contain; display: block; }
-        
-        .dot { 
-            position: absolute; width: 12px; height: 12px; background: red; border: 1.5px solid white; 
-            border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; 
-        }
-        .dot-label { 
-            position: absolute; font-size: 8px; color: white; background: rgba(0,0,0,0.8); 
-            padding: 1px 3px; border-radius: 2px; transform: translate(8px, -8px); white-space: nowrap; 
-        }
-
-        /* Tabla ultra compacta */
-        .table-container { flex: 1; overflow: auto; background: white; border-radius: 6px; border: 1px solid #eee; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.48rem; }
-        th, td { padding: 3px 1px; border: 1px solid #eee; text-align: center; }
-        th { background: #f8f8f8; font-weight: bold; position: sticky; top: 0; }
-
-        /* Barras de estadísticas */
-        .stats-bar { 
-            display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; 
-            margin: 4px 0; padding: 4px; background: #fff; border-radius: 8px; 
-            border: 1px solid #ddd; font-size: 0.5rem; text-align: center; 
-        }
-        .stat-val { font-size: 0.9rem; font-weight: bold; display: block; }
+        /* PANTALLA MAPA: ESTRUCTURA RÍGIDA */
+        #step-map { display: none; flex-direction: column; }
+        #step-map.active { display: flex; }
 
         .sidebar-horizontal { 
-            display: flex; overflow-x: auto; background: white; border: 1px solid #ccc; 
-            border-radius: 8px; margin-bottom: 4px; padding: 4px 0; min-height: 35px;
+            height: 45px; display: flex; overflow-x: auto; background: white; 
+            border-bottom: 1px solid #ccc; flex-shrink: 0; touch-action: pan-x;
         }
-        .sidebar-item { min-width: 40px; text-align: center; border-right: 1px solid #eee; font-size: 0.55rem; flex-shrink: 0; }
+        .sidebar-item { min-width: 45px; text-align: center; border-right: 1px solid #eee; font-size: 0.6rem; padding-top: 4px; flex-shrink: 0; }
         .sidebar-item.current { background: #fff9c4; font-weight: bold; }
 
         .info-bar { 
-            background: white; padding: 4px 8px; margin-bottom: 4px; border-left: 3px solid var(--primary); 
-            font-size: 0.75rem; font-weight: bold; display: flex; align-items: center; justify-content: space-between; 
+            height: 35px; background: white; border-left: 4px solid var(--primary); 
+            display: flex; align-items: center; justify-content: space-between; 
+            padding: 0 10px; font-size: 0.8rem; font-weight: bold; flex-shrink: 0;
         }
 
-        #club-selector-overlay { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; 
+        /* EL MAPA OCUPA TODO EL ESPACIO RESTANTE */
+        .map-wrapper { 
+            flex-grow: 1; position: relative; background: #ddd; overflow: hidden;
+            width: 100%; display: flex; align-items: center; justify-content: center;
+            touch-action: none; /* El mapa no se scrollea */
         }
-        .club-modal { background: white; padding: 12px; border-radius: 12px; width: 90%; max-width: 320px; }
+        .map-wrapper img { max-width: 100%; max-height: 100%; object-fit: contain; }
         
-        .score-counter { display: flex; align-items: center; justify-content: center; gap: 20px; margin: 10px 0; }
-        .btn-round { width: 45px; height: 45px; border-radius: 50%; font-size: 1.4rem; background: #eee; border: 1px solid #ccc; }
-        .score-display { font-size: 2.5rem; font-weight: bold; }
+        .footer-btns { 
+            height: 60px; display: flex; gap: 5px; padding: 5px; background: var(--bg); flex-shrink: 0;
+        }
+
+        /* ELEMENTOS DEL MAPA */
+        .dot { 
+            position: absolute; width: 14px; height: 14px; background: red; border: 1.5px solid white; 
+            border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 10;
+        }
+        .dot-label { 
+            position: absolute; font-size: 8px; color: white; background: rgba(0,0,0,0.8); 
+            padding: 1px 3px; border-radius: 2px; transform: translate(10px, -10px); white-space: nowrap; 
+        }
+
+        /* BOTONES */
+        button { border-radius: 8px; font-weight: bold; cursor: pointer; border: 1px solid #ccc; background: white; }
+        .btn-accent { background: var(--accent); color: white; border: none; }
+        .btn-large { width: 100%; padding: 15px; background: var(--primary); color: white; font-size: 1rem; border: none; }
+        .btn-gir { background: white; border: 2px solid var(--gir); color: var(--gir); flex: 1; padding: 10px; }
+        .btn-gir.selected { background: var(--gir); color: white; }
+
+        /* TARJETA */
+        .table-container { flex: 1; overflow-y: auto; background: white; touch-action: pan-y; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.52rem; }
+        th, td { padding: 5px 1px; border: 1px solid #eee; text-align: center; }
+        th { background: #f8f8f8; position: sticky; top: 0; }
+        
+        .stats-bar { 
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; 
+            padding: 6px; background: #fff; border-radius: 8px; border: 1px solid #ddd; 
+            font-size: 0.55rem; text-align: center; flex-shrink: 0; margin: 5px;
+        }
+        .stat-val { font-size: 1rem; font-weight: bold; display: block; }
     </style>
 </head>
-<body>
+<body oncontextmenu="return false;">
 
 <header>MI GOLF</header>
 
 <div class="container">
-    <div id="screen-menu" class="screen active" style="justify-content: center;">
-        <h2 style="margin-bottom: 20px;">Bienvenido</h2>
+    <div id="screen-menu" class="screen active" style="justify-content: center; padding: 20px;">
+        <h2>Bienvenido</h2>
         <button class="btn-large" onclick="changeScreen('screen-init-hcap')">NUEVA RONDA</button>
-        <button class="btn-sec" onclick="showHistory()" style="margin-top:10px">HISTORIAL</button>
-        <button onclick="clearAllData()" style="margin-top: 40px; font-size: 0.6rem; opacity: 0.4;">RESETEAR APP</button>
+        <button style="width:100%; margin-top:10px; padding:12px;" onclick="showHistory()">HISTORIAL</button>
+        <button onclick="clearAllData()" style="margin-top: 50px; font-size: 0.6rem; opacity: 0.4; border:none;">RESETEAR APP</button>
     </div>
 
     <div id="screen-init-hcap" class="screen" style="justify-content: center; text-align: center;">
         <h3>Handicap de Juego</h3>
-        <input type="number" id="hcap-value" style="font-size:2rem; width:80px; text-align:center; border:2px solid var(--accent); border-radius:8px; margin:20px;" placeholder="0">
-        <button class="btn-large" onclick="startNewRound()">COMENZAR</button>
-        <button class="btn-sec" onclick="changeScreen('screen-menu')" style="margin-top:10px">Cancelar</button>
+        <input type="number" id="hcap-value" style="font-size:2.5rem; width:100px; text-align:center; border:2px solid var(--accent); border-radius:10px;" placeholder="0">
+        <div style="margin-top:20px;">
+            <button class="btn-large" onclick="startNewRound()">COMENZAR</button>
+            <button style="width:100%; margin-top:10px; padding:10px;" onclick="changeScreen('screen-menu')">Cancelar</button>
+        </div>
     </div>
 
     <div id="step-hole" class="screen">
         <div class="info-bar" id="round-info"></div>
         <div id="global-stats" class="stats-bar"></div>
-        <div class="grid-6" id="hole-btns" style="flex:1"></div>
-        <button class="btn-accent" onclick="changeScreen('screen-summary')">VER TARJETA / ANALISIS</button>
-        <button class="btn-sec" onclick="changeScreen('screen-menu')">Menu</button>
+        <div class="grid-6" id="hole-btns" style="display:grid; grid-template-columns: repeat(6, 1fr); gap:5px; padding:10px; overflow-y:auto;"></div>
+        <div style="padding:10px;">
+            <button class="btn-accent" style="width:100%; padding:15px;" onclick="changeScreen('screen-summary')">VER TARJETA / ANALISIS</button>
+            <button style="width:100%; margin-top:5px; padding:10px;" onclick="changeScreen('screen-menu')">Menu</button>
+        </div>
     </div>
 
     <div id="step-map" class="screen">
         <div id="sidebar-score" class="sidebar-horizontal"></div>
+        
         <div class="info-bar">
-            <span>H: <select id="hoyo-quick-select" onchange="jumpToHole(this.value)" style="font-size:0.8rem"></select></span>
+            <span>H: <select id="hoyo-quick-select" onchange="jumpToHole(this.value)" style="font-size:0.9rem; padding:2px;"></select></span>
             <span id="par-info"></span>
         </div>
+        
         <div class="map-wrapper" id="map-clicker">
-            <img src="mapa.jpg" alt="Mapa">
+            <img src="mapa.jpg" alt="Mapa del Hoyo">
             <div id="marks-container"></div>
         </div>
-        <div style="display:flex; gap:4px; margin-top:4px">
+        
+        <div class="footer-btns">
             <button style="flex:1" onclick="undoShot()">Undo</button>
+            <button style="flex:1" onclick="changeScreen('step-hole')">Hoyos</button>
             <button class="btn-accent" style="flex:2" onclick="askScore()">FIN HOYO</button>
         </div>
     </div>
 
-    <div id="screen-score" class="screen" style="justify-content: center; text-align: center;">
-        <h3 id="score-title" style="margin:5px"></h3>
-        <p style="margin:0; font-size:0.7rem; font-weight:bold">GOLPES TOTALES</p>
-        <div class="score-counter">
-            <button class="btn-round" onclick="adjustScore(-1)">-</button>
-            <div id="score-val-display" class="score-display">0</div>
-            <button class="btn-round" onclick="adjustScore(1)">+</button>
+    <div id="screen-score" class="screen" style="justify-content: center; text-align: center; padding: 10px; overflow-y: auto;">
+        <h2 id="score-title" style="margin:5px"></h2>
+        <div style="display:flex; align-items:center; justify-content:center; gap:20px; margin:15px 0;">
+            <button style="width:60px; height:60px; border-radius:50%; font-size:2rem;" onclick="adjustScore(-1)">-</button>
+            <div id="score-val-display" style="font-size:3.5rem; font-weight:bold;">0</div>
+            <button style="width:60px; height:60px; border-radius:50%; font-size:2rem;" onclick="adjustScore(1)">+</button>
         </div>
-        <div style="margin-bottom:10px">
-            <p style="margin:2px; font-weight:bold; font-size:0.75rem">GIR</p>
-            <div style="display:flex; gap:10px; width:140px; margin:auto">
+        <div style="margin-bottom:15px">
+            <p style="font-weight:bold; margin-bottom:5px;">GIR</p>
+            <div style="display:flex; gap:10px; width:180px; margin:auto">
                 <button id="gir-si" class="btn-gir" onclick="setGIR(true)">SI</button>
                 <button id="gir-no" class="btn-gir" onclick="setGIR(false)">NO</button>
             </div>
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; padding: 5px;">
-            <div style="font-size:0.6rem">PUTTS<br><input type="number" id="in-putts" value="2" style="width:30px"></div>
-            <div style="font-size:0.6rem">PEN<br><input type="number" id="in-pen" value="0" style="width:30px"></div>
-            <div style="font-size:0.6rem">BKER<br><input type="number" id="in-bnk" value="0" style="width:30px"></div>
-            <div style="font-size:0.6rem">HZRD<br><input type="number" id="in-hzd" value="0" style="width:30px"></div>
-            <div style="font-size:0.6rem">OB<br><input type="number" id="in-ob" value="0" style="width:30px"></div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 10px; background:white; border-radius:10px;">
+            <div style="font-size:0.7rem">PUTTS<br><input type="number" id="in-putts" value="2" style="width:40px; font-size:1rem; text-align:center;"></div>
+            <div style="font-size:0.7rem">PEN<br><input type="number" id="in-pen" value="0" style="width:40px; font-size:1rem; text-align:center;"></div>
+            <div style="font-size:0.7rem">BKER<br><input type="number" id="in-bnk" value="0" style="width:40px; font-size:1rem; text-align:center;"></div>
+            <div style="font-size:0.7rem">HZRD<br><input type="number" id="in-hzd" value="0" style="width:40px; font-size:1rem; text-align:center;"></div>
+            <div style="font-size:0.7rem">FUERA<br><input type="number" id="in-ob" value="0" style="width:40px; font-size:1rem; text-align:center;"></div>
         </div>
-        <button class="btn-large" onclick="saveHoleData()" style="margin-top:10px">GUARDAR HOYO</button>
+        <button class="btn-large" onclick="saveHoleData()" style="margin-top:20px;">GUARDAR HOYO</button>
     </div>
 
     <div id="screen-summary" class="screen">
-        <div class="summary-nav" style="display:flex; gap:4px; margin-bottom:4px;">
-            <button id="tab-map" onclick="toggleSummaryView('map')" style="flex:1">MAPA</button>
-            <button id="tab-stats" onclick="toggleSummaryView('stats')" class="active-tab" style="flex:1; background:var(--primary); color:white;">TARJETA</button>
+        <div style="display:flex; gap:4px; padding:5px; flex-shrink:0;">
+            <button id="tab-map" onclick="toggleSummaryView('map')" style="flex:1; padding:10px;">MAPA</button>
+            <button id="tab-stats" onclick="toggleSummaryView('stats')" style="flex:1; padding:10px; background:var(--primary); color:white;">TARJETA</button>
         </div>
         
-        <div id="view-stats" class="summary-view active" style="display:flex; flex-direction:column; flex:1; min-height:0;">
+        <div id="view-stats" class="summary-view" style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
             <div id="summary-stats-bar-top" class="stats-bar"></div>
             <div class="table-container">
                 <table>
@@ -187,63 +187,54 @@
                     <tbody id="scorecard-body"></tbody>
                 </table>
             </div>
-            <div id="net-results" style="background:white; padding:6px; margin:4px 0; border-radius:8px; font-size:0.9rem; border: 1px solid #eee; text-align:center; font-weight:bold;"></div>
+            <div id="net-results" style="background:white; padding:10px; border-top:1px solid #ddd; font-size:1rem; text-align:center; font-weight:bold; flex-shrink:0;"></div>
             <div id="summary-stats-bar-bottom" class="stats-bar"></div>
         </div>
 
-        <div id="view-map" class="summary-view" style="display:none; flex:1;">
-            <select id="summary-filter" onchange="renderSummaryMarks()" style="width:100%; margin-bottom:4px; font-size:0.7rem;"></select>
-            <div class="map-wrapper">
+        <div id="view-map" class="summary-view" style="display:none; flex-direction:column; flex:1; overflow:hidden;">
+            <div style="padding:5px;"><select id="summary-filter" onchange="renderSummaryMarks()" style="width:100%; padding:8px;"></select></div>
+            <div class="map-wrapper" style="background:white;">
                 <img src="mapa.jpg">
                 <div id="summary-marks-container"></div>
             </div>
         </div>
 
-        <button class="btn-sec" onclick="changeScreen('step-hole')" style="margin-top:4px">Volver</button>
-    </div>
-
-    <div id="screen-history" class="screen">
-        <h3>Historial</h3>
-        <div id="history-list" style="overflow-y: auto; flex: 1;"></div>
-        <button class="btn-sec" onclick="changeScreen('screen-menu')">Volver</button>
+        <div style="padding:5px; flex-shrink:0;">
+            <button class="btn-sec" style="width:100%; padding:12px;" onclick="changeScreen('step-hole')">Volver a Hoyos</button>
+        </div>
     </div>
 </div>
 
-<div id="club-selector-overlay"><div class="club-modal"><h4>Palo:</h4><div class="grid-3" id="club-btns"></div><button class="btn-sec" onclick="closeClubs()" style="width:100%; margin-top:10px">Cerrar</button></div></div>
+<div id="club-selector-overlay"><div class="club-modal"><h3>Palo:</h3><div id="club-btns" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;"></div><button style="width:100%; margin-top:15px; padding:10px;" onclick="closeClubs()">Cerrar</button></div></div>
 
 <script>
     const PARS = { 1:4, 2:4, 3:3, 4:5, 5:4, 6:4, 7:3, 8:4, 9:5, 10:4, 11:3, 12:4, 13:3, 14:4, 15:4, 16:4, 17:4, 18:5 };
     const HOLE_HCP = { 1:15, 2:17, 3:9, 4:11, 5:3, 6:13, 7:1, 8:5, 9:7, 10:2, 11:8, 12:16, 13:14, 14:12, 15:4, 16:18, 17:10, 18:6 };
     const CLUBS = ["D", "M", "3", "4", "5", "6", "7", "8", "9", "P", "A", "56", "60"];
     
-    let rounds = JSON.parse(localStorage.getItem('golf_v52_db')) || [];
+    let rounds = JSON.parse(localStorage.getItem('golf_v53_db')) || [];
     let currentId = null, currentHoyo = null, tempCoords = null, girTemp = false, scoreTemp = 0;
 
+    // Inicializar botones de hoyos
     const hGrid = document.getElementById('hole-btns');
     const qSelect = document.getElementById('hoyo-quick-select');
     for(let i=1; i<=18; i++) {
-        let b = document.createElement('button'); b.innerText = i;
+        let b = document.createElement('button'); b.innerText = i; b.style.padding = "12px";
         b.onclick = () => { currentHoyo = i; changeScreen('step-map'); };
         hGrid.appendChild(b);
-        let opt = document.createElement('option'); opt.value = i; opt.innerText = i;
-        qSelect.appendChild(opt);
+        let opt = document.createElement('option'); opt.value = i; opt.innerText = i; qSelect.appendChild(opt);
     }
 
+    // Inicializar botones de palos
     const cGrid = document.getElementById('club-btns');
     const sFilter = document.getElementById('summary-filter');
-    let optAll = document.createElement('option'); optAll.value = "all"; optAll.innerText = "Todos los Palos";
-    sFilter.appendChild(optAll);
+    let oAll = document.createElement('option'); oAll.value = "all"; oAll.innerText = "Todos los Palos"; sFilter.appendChild(oAll);
     CLUBS.forEach(p => {
-        let b = document.createElement('button'); b.innerText = p; b.onclick = () => confirmShot(p);
-        cGrid.appendChild(b);
+        let b = document.createElement('button'); b.innerText = p; b.style.padding = "15px";
+        b.onclick = () => confirmShot(p); cGrid.appendChild(b);
         let opt = document.createElement('option'); opt.value = p; opt.innerText = p; sFilter.appendChild(opt);
     });
 
-    function adjustScore(v) { scoreTemp += v; if(scoreTemp < 1) scoreTemp = 1; document.getElementById('score-val-display').innerText = scoreTemp; }
-    function setGIR(v) { girTemp = v; document.getElementById('gir-si').className = v ? 'btn-gir selected' : 'btn-gir'; document.getElementById('gir-no').className = !v ? 'btn-gir selected' : 'btn-gir'; }
-    function jumpToHole(num) { currentHoyo = parseInt(num); updateMapScreen(); }
-    function closeClubs() { document.getElementById('club-selector-overlay').style.display = 'none'; }
-    
     function changeScreen(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
@@ -264,13 +255,12 @@
         save(); document.getElementById('hcap-value').value = ""; changeScreen('step-hole');
     }
 
-    function save() { localStorage.setItem('golf_v52_db', JSON.stringify(rounds)); }
+    function save() { localStorage.setItem('golf_v53_db', JSON.stringify(rounds)); }
 
     function updateMapScreen() {
         document.getElementById('hoyo-quick-select').value = currentHoyo;
         document.getElementById('par-info').innerText = "P" + PARS[currentHoyo] + " (Idx " + HOLE_HCP[currentHoyo] + ")";
-        renderMarks('marks-container', true); 
-        updateSidebar();
+        renderMarks('marks-container', true); updateSidebar();
     }
 
     document.getElementById('map-clicker').onclick = function(e) {
@@ -293,8 +283,7 @@
         if(filterPalo !== "all") list = list.filter(g => g.p === filterPalo);
         list.forEach(g => {
             let d = document.createElement('div'); d.className = 'dot'; d.style.left = g.x + "%"; d.style.top = g.y + "%";
-            let l = document.createElement('span'); l.className = 'dot-label';
-            l.innerText = g.p + "-H" + g.h;
+            let l = document.createElement('span'); l.className = 'dot-label'; l.innerText = g.p + "-H" + g.h;
             d.appendChild(l); cont.appendChild(d);
         });
     }
@@ -303,23 +292,23 @@
         let r = rounds.find(x => x.id === currentId);
         let html = ''; let totalGross = 0; let netAcumulado = 0;
         for(let i=1; i<=18; i++) {
-            let s = r.holeStats[i]?.score; let g = r.golpes.filter(x => x.h === i).length;
-            let val = s || (g > 0 ? g : '-'); 
+            let s = r.holeStats[i]?.score; let gCount = r.golpes.filter(x => x.h === i).length;
+            let val = s || (gCount > 0 ? gCount : '-'); 
             if(s) {
                 totalGross += s;
                 let strokes = (r.handicap >= HOLE_HCP[i]) ? 1 : 0;
                 netAcumulado += (s - PARS[i] - strokes);
             }
-            let gir = r.holeStats[i]?.gir ? '<span style="color:var(--gir)">G</span>' : "";
-            html += `<div class="sidebar-item ${i===currentHoyo?'current':''}"><div>H${i}</div><div>${val}</div><div>${gir}</div></div>`;
+            let girMark = r.holeStats[i]?.gir ? '<div style="color:var(--gir); font-weight:bold;">G</div>' : "<div>&nbsp;</div>";
+            html += `<div class="sidebar-item ${i===currentHoyo?'current':''}"><div>H${i}</div><div>${val}</div>${girMark}</div>`;
         }
-        let sign = netAcumulado > 0 ? "+" : "";
-        document.getElementById('sidebar-score').innerHTML = html + `
-            <div class="sidebar-item" style="background:#333; color:white; min-width:65px; border:none;">
-                <div>G: ${totalGross}</div>
-                <div style="color:var(--accent)">N: ${sign}${netAcumulado}</div>
-            </div>`;
+        document.getElementById('sidebar-score').innerHTML = html + `<div class="sidebar-item" style="background:#333; color:white; min-width:70px; border:none;"><div>G: ${totalGross}</div><div style="color:var(--accent)">N: ${netAcumulado>0?'+':''}${netAcumulado}</div></div>`;
     }
+
+    function adjustScore(v) { scoreTemp += v; if(scoreTemp < 1) scoreTemp = 1; document.getElementById('score-val-display').innerText = scoreTemp; }
+    function setGIR(v) { girTemp = v; document.getElementById('gir-si').className = v ? 'btn-gir selected' : 'btn-gir'; document.getElementById('gir-no').className = !v ? 'btn-gir selected' : 'btn-gir'; }
+    function closeClubs() { document.getElementById('club-selector-overlay').style.display = 'none'; }
+    function jumpToHole(num) { currentHoyo = parseInt(num); updateMapScreen(); }
 
     function askScore() {
         let r = rounds.find(x => x.id === currentId);
@@ -347,16 +336,11 @@
     function getStatsHTML(r) {
         let c = { bir: 0, par: 0, bog: 0, pbog: 0, gir: 0 };
         Object.keys(r.holeStats).forEach(h => {
-            let s = r.holeStats[h].score;
-            let d = s - PARS[h];
-            if(d < 0) c.bir++; else if(d === 0) c.par++; else if(d === 1) c.bog++; else c.pbog++;
+            let s = r.holeStats[h].score; let diff = s - PARS[h];
+            if(diff < 0) c.bir++; else if(diff === 0) c.par++; else if(diff === 1) c.bog++; else c.pbog++;
             if(r.holeStats[h].gir) c.gir++;
         });
-        return `<div style="color:blue" class="stat-box"><span class="stat-val">${c.bir}</span>Bir</div>
-                <div style="color:green" class="stat-box"><span class="stat-val">${c.par}</span>Par</div>
-                <div style="color:orange" class="stat-box"><span class="stat-val">${c.bog}</span>Bog</div>
-                <div style="color:red" class="stat-box"><span class="stat-val">${c.pbog}</span>+Bog</div>
-                <div style="color:var(--gir)" class="stat-box stat-separator"><span class="stat-val">${c.gir}</span>GIR</div>`;
+        return `<div style="color:blue"><span class="stat-val">${c.bir}</span>Bir</div><div style="color:green"><span class="stat-val">${c.par}</span>Par</div><div style="color:orange"><span class="stat-val">${c.bog}</span>Bog</div><div style="color:red"><span class="stat-val">${c.pbog}</span>+Bog</div><div style="color:var(--gir); border-left:1px solid #ccc;"><span class="stat-val">${c.gir}</span>GIR</div>`;
     }
 
     function toggleSummaryView(v) {
@@ -372,36 +356,26 @@
         let r = rounds.find(x => x.id === currentId);
         document.getElementById('summary-stats-bar-top').innerHTML = getStatsHTML(r);
         let sBody = document.getElementById('scorecard-body'); sBody.innerHTML = "";
-        let totals = {g:0, n:0, gir:0, pen:0, bker:0, hzrd:0, fuera:0};
-        
+        let totals = {g:0, n:0, gir:0, pen:0, bker:0, hzrd:0, ob:0};
         for(let i=1; i<=18; i++) {
             let h = r.holeStats[i] || {score:0, gir:false, putts:0, pen:0, bnk:0, hzd:0, ob:0};
             let strokes = (r.handicap >= HOLE_HCP[i]) ? 1 : 0;
-            let netRelativo = h.score ? (h.score - PARS[i] - strokes) : '-';
-            if(h.score) {
-                totals.g += h.score; totals.n += (h.score - PARS[i] - strokes);
-                if(h.gir) totals.gir++; totals.pen += h.pen; totals.bker += h.bnk; totals.hzrd += h.hzd; totals.fuera += h.ob;
-            }
-            sBody.innerHTML += `<tr><td>${i}</td><td>${PARS[i]}</td><td>${HOLE_HCP[i]}</td><td><b>${h.score||'-'}</b></td><td style="background:#f0f7f0">${netRelativo > 0 ? '+' : ''}${netRelativo}</td><td>${h.gir?'G':'-'}</td><td>${h.putts}</td><td>${h.pen}</td><td>${h.bnk}</td><td>${h.hzd}</td><td>${h.ob}</td></tr>`;
+            let netH = h.score ? (h.score - PARS[i] - strokes) : '-';
+            if(h.score) { totals.g += h.score; totals.n += (h.score - PARS[i] - strokes); if(h.gir) totals.gir++; totals.pen += h.pen; totals.bker += h.bnk; totals.hzrd += h.hzd; totals.ob += h.ob; }
+            sBody.innerHTML += `<tr><td>${i}</td><td>${PARS[i]}</td><td>${HOLE_HCP[i]}</td><td><b>${h.score||'-'}</b></td><td style="background:#f0f7f0">${netH>0?'+':''}${netH}</td><td>${h.gir?'G':'-'}</td><td>${h.putts}</td><td>${h.pen}</td><td>${h.bnk}</td><td>${h.hzd}</td><td>${h.ob}</td></tr>`;
         }
-        
         document.getElementById('net-results').innerHTML = `GROSS: ${totals.g} | NETO: ${totals.n > 0 ? '+' : ''}${totals.n}`;
-        document.getElementById('summary-stats-bar-bottom').innerHTML = `
-            <div style="color:var(--gir)" class="stat-box"><span class="stat-val">${totals.gir}</span>GIR</div>
-            <div style="color:red" class="stat-box"><span class="stat-val">${totals.pen}</span>Pen</div>
-            <div style="color:#795548" class="stat-box"><span class="stat-val">${totals.bker}</span>Bker</div>
-            <div style="color:#0288d1" class="stat-box"><span class="stat-val">${totals.hzrd}</span>Hzrd</div>
-            <div style="color:#d32f2f" class="stat-box"><span class="stat-val">${totals.fuera}</span>Fuera</div>
-        `;
+        document.getElementById('summary-stats-bar-bottom').innerHTML = `<div style="color:var(--gir)"><span class="stat-val">${totals.gir}</span>GIR</div><div style="color:red"><span class="stat-val">${totals.pen}</span>Pen</div><div style="color:#795548"><span class="stat-val">${totals.bker}</span>Bker</div><div style="color:#0288d1"><span class="stat-val">${totals.hzrd}</span>Hzrd</div><div style="color:#d32f2f"><span class="stat-val">${totals.ob}</span>Fuera</div>`;
         renderSummaryMarks();
     }
 
     function renderSummaryMarks() { renderMarks('summary-marks-container', false, document.getElementById('summary-filter').value); }
-    function undoShot() { let r = rounds.find(x => x.id === currentId); if(r.golpes.length > 0) { r.golpes.pop(); save(); updateMapScreen(); } }
+    function undoShot() { let r = rounds.find(x => x.id === currentId); if(r.golpes.length>0){ r.golpes.pop(); save(); updateMapScreen(); } }
     function showHistory() {
-        let list = document.getElementById('history-list'); list.innerHTML = rounds.length ? "" : "Vacio";
+        let list = document.getElementById('history-list'); list.innerHTML = rounds.length ? "" : "Vacío";
         [...rounds].reverse().forEach(r => {
-            let b = document.createElement('button'); b.className = "btn-sec"; b.innerText = r.nombre + " (Hcp: " + r.handicap + ")";
+            let b = document.createElement('button'); b.className = "btn-sec"; b.style.width="100%"; b.style.marginBottom="5px";
+            b.innerText = r.nombre + " (Hcp: " + r.handicap + ")";
             b.onclick = function() { currentId = r.id; changeScreen('step-hole'); };
             list.appendChild(b);
         });
