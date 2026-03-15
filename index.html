@@ -3,19 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Mi Golf v5.3</title>
+    <title>Mi Golf v5.4</title>
     <style>
         :root { 
             --primary: #1b5e20; --bg: #f0f4f0; --white: #ffffff; --accent: #ff9800; --text: #333; --gir: #673ab7; 
         }
         
-        /* BLOQUEO DE NAVEGADOR */
         html, body { 
             height: 100dvh; width: 100vw; margin: 0; padding: 0;
-            overflow: hidden; touch-action: none; /* Evita que la ventana se mueva */
+            overflow: hidden; 
             overscroll-behavior: none;
             font-family: -apple-system, system-ui, sans-serif;
             background: var(--bg);
+            /* Evita el scroll elástico pero permite clicks */
+            touch-action: pan-x pan-y; 
         }
 
         header { 
@@ -23,7 +24,6 @@
             font-weight: bold; height: 30px; line-height: 30px; font-size: 0.9rem;
         }
 
-        /* CONTENEDOR PRINCIPAL OCUPA EL RESTO */
         .container { 
             height: calc(100dvh - 30px); 
             display: flex; flex-direction: column; width: 100%;
@@ -34,13 +34,10 @@
         }
         .active { display: flex; }
 
-        /* PANTALLA MAPA: ESTRUCTURA RÍGIDA */
-        #step-map { display: none; flex-direction: column; }
-        #step-map.active { display: flex; }
-
+        /* PANTALLA MAPA */
         .sidebar-horizontal { 
             height: 45px; display: flex; overflow-x: auto; background: white; 
-            border-bottom: 1px solid #ccc; flex-shrink: 0; touch-action: pan-x;
+            border-bottom: 1px solid #ccc; flex-shrink: 0; 
         }
         .sidebar-item { min-width: 45px; text-align: center; border-right: 1px solid #eee; font-size: 0.6rem; padding-top: 4px; flex-shrink: 0; }
         .sidebar-item.current { background: #fff9c4; font-weight: bold; }
@@ -51,37 +48,40 @@
             padding: 0 10px; font-size: 0.8rem; font-weight: bold; flex-shrink: 0;
         }
 
-        /* EL MAPA OCUPA TODO EL ESPACIO RESTANTE */
+        /* MAPA: touch-action manipulation permite el click rápido */
         .map-wrapper { 
-            flex-grow: 1; position: relative; background: #ddd; overflow: hidden;
+            flex: 1; position: relative; background: #fff; overflow: hidden;
             width: 100%; display: flex; align-items: center; justify-content: center;
-            touch-action: none; /* El mapa no se scrollea */
+            touch-action: manipulation; 
         }
-        .map-wrapper img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .map-wrapper img { max-width: 100%; max-height: 100%; object-fit: contain; pointer-events: none; }
         
+        /* IMPORTANTE: pointer-events none para que no bloquee el click al mapa */
+        #marks-container, #summary-marks-container { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            pointer-events: none; 
+        }
+
         .footer-btns { 
             height: 60px; display: flex; gap: 5px; padding: 5px; background: var(--bg); flex-shrink: 0;
         }
 
-        /* ELEMENTOS DEL MAPA */
         .dot { 
             position: absolute; width: 14px; height: 14px; background: red; border: 1.5px solid white; 
-            border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 10;
+            border-radius: 50%; transform: translate(-50%, -50%); z-index: 10;
         }
         .dot-label { 
             position: absolute; font-size: 8px; color: white; background: rgba(0,0,0,0.8); 
             padding: 1px 3px; border-radius: 2px; transform: translate(10px, -10px); white-space: nowrap; 
         }
 
-        /* BOTONES */
-        button { border-radius: 8px; font-weight: bold; cursor: pointer; border: 1px solid #ccc; background: white; }
+        button { border-radius: 8px; font-weight: bold; cursor: pointer; border: 1px solid #ccc; background: white; -webkit-tap-highlight-color: transparent; }
         .btn-accent { background: var(--accent); color: white; border: none; }
         .btn-large { width: 100%; padding: 15px; background: var(--primary); color: white; font-size: 1rem; border: none; }
         .btn-gir { background: white; border: 2px solid var(--gir); color: var(--gir); flex: 1; padding: 10px; }
         .btn-gir.selected { background: var(--gir); color: white; }
 
-        /* TARJETA */
-        .table-container { flex: 1; overflow-y: auto; background: white; touch-action: pan-y; }
+        .table-container { flex: 1; overflow-y: auto; background: white; }
         table { width: 100%; border-collapse: collapse; font-size: 0.52rem; }
         th, td { padding: 5px 1px; border: 1px solid #eee; text-align: center; }
         th { background: #f8f8f8; position: sticky; top: 0; }
@@ -94,13 +94,13 @@
         .stat-val { font-size: 1rem; font-weight: bold; display: block; }
     </style>
 </head>
-<body oncontextmenu="return false;">
+<body>
 
 <header>MI GOLF</header>
 
 <div class="container">
     <div id="screen-menu" class="screen active" style="justify-content: center; padding: 20px;">
-        <h2>Bienvenido</h2>
+        <h2 style="text-align: center;">Bienvenido</h2>
         <button class="btn-large" onclick="changeScreen('screen-init-hcap')">NUEVA RONDA</button>
         <button style="width:100%; margin-top:10px; padding:12px;" onclick="showHistory()">HISTORIAL</button>
         <button onclick="clearAllData()" style="margin-top: 50px; font-size: 0.6rem; opacity: 0.4; border:none;">RESETEAR APP</button>
@@ -109,7 +109,7 @@
     <div id="screen-init-hcap" class="screen" style="justify-content: center; text-align: center;">
         <h3>Handicap de Juego</h3>
         <input type="number" id="hcap-value" style="font-size:2.5rem; width:100px; text-align:center; border:2px solid var(--accent); border-radius:10px;" placeholder="0">
-        <div style="margin-top:20px;">
+        <div style="margin-top:20px; padding: 0 20px;">
             <button class="btn-large" onclick="startNewRound()">COMENZAR</button>
             <button style="width:100%; margin-top:10px; padding:10px;" onclick="changeScreen('screen-menu')">Cancelar</button>
         </div>
@@ -127,17 +127,14 @@
 
     <div id="step-map" class="screen">
         <div id="sidebar-score" class="sidebar-horizontal"></div>
-        
         <div class="info-bar">
             <span>H: <select id="hoyo-quick-select" onchange="jumpToHole(this.value)" style="font-size:0.9rem; padding:2px;"></select></span>
             <span id="par-info"></span>
         </div>
-        
         <div class="map-wrapper" id="map-clicker">
-            <img src="mapa.jpg" alt="Mapa del Hoyo">
+            <img src="mapa.jpg" alt="Mapa">
             <div id="marks-container"></div>
         </div>
-        
         <div class="footer-btns">
             <button style="flex:1" onclick="undoShot()">Undo</button>
             <button style="flex:1" onclick="changeScreen('step-hole')">Hoyos</button>
@@ -147,26 +144,26 @@
 
     <div id="screen-score" class="screen" style="justify-content: center; text-align: center; padding: 10px; overflow-y: auto;">
         <h2 id="score-title" style="margin:5px"></h2>
-        <div style="display:flex; align-items:center; justify-content:center; gap:20px; margin:15px 0;">
-            <button style="width:60px; height:60px; border-radius:50%; font-size:2rem;" onclick="adjustScore(-1)">-</button>
-            <div id="score-val-display" style="font-size:3.5rem; font-weight:bold;">0</div>
-            <button style="width:60px; height:60px; border-radius:50%; font-size:2rem;" onclick="adjustScore(1)">+</button>
+        <div style="display:flex; align-items:center; justify-content:center; gap:20px; margin:10px 0;">
+            <button style="width:50px; height:50px; border-radius:50%; font-size:1.5rem;" onclick="adjustScore(-1)">-</button>
+            <div id="score-val-display" style="font-size:3rem; font-weight:bold;">0</div>
+            <button style="width:50px; height:50px; border-radius:50%; font-size:1.5rem;" onclick="adjustScore(1)">+</button>
         </div>
-        <div style="margin-bottom:15px">
-            <p style="font-weight:bold; margin-bottom:5px;">GIR</p>
-            <div style="display:flex; gap:10px; width:180px; margin:auto">
+        <div style="margin-bottom:10px">
+            <p style="font-weight:bold; margin-bottom:5px; font-size: 0.8rem;">GIR</p>
+            <div style="display:flex; gap:10px; width:160px; margin:auto">
                 <button id="gir-si" class="btn-gir" onclick="setGIR(true)">SI</button>
                 <button id="gir-no" class="btn-gir" onclick="setGIR(false)">NO</button>
             </div>
         </div>
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 10px; background:white; border-radius:10px;">
-            <div style="font-size:0.7rem">PUTTS<br><input type="number" id="in-putts" value="2" style="width:40px; font-size:1rem; text-align:center;"></div>
-            <div style="font-size:0.7rem">PEN<br><input type="number" id="in-pen" value="0" style="width:40px; font-size:1rem; text-align:center;"></div>
-            <div style="font-size:0.7rem">BKER<br><input type="number" id="in-bnk" value="0" style="width:40px; font-size:1rem; text-align:center;"></div>
-            <div style="font-size:0.7rem">HZRD<br><input type="number" id="in-hzd" value="0" style="width:40px; font-size:1rem; text-align:center;"></div>
-            <div style="font-size:0.7rem">FUERA<br><input type="number" id="in-ob" value="0" style="width:40px; font-size:1rem; text-align:center;"></div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px; background:white; border-radius:10px;">
+            <div style="font-size:0.6rem">PUTTS<br><input type="number" id="in-putts" value="2" style="width:35px; font-size:1rem; text-align:center;"></div>
+            <div style="font-size:0.6rem">PEN<br><input type="number" id="in-pen" value="0" style="width:35px; font-size:1rem; text-align:center;"></div>
+            <div style="font-size:0.6rem">BKER<br><input type="number" id="in-bnk" value="0" style="width:35px; font-size:1rem; text-align:center;"></div>
+            <div style="font-size:0.6rem">HZRD<br><input type="number" id="in-hzd" value="0" style="width:35px; font-size:1rem; text-align:center;"></div>
+            <div style="font-size:0.6rem">FUERA<br><input type="number" id="in-ob" value="0" style="width:35px; font-size:1rem; text-align:center;"></div>
         </div>
-        <button class="btn-large" onclick="saveHoleData()" style="margin-top:20px;">GUARDAR HOYO</button>
+        <button class="btn-large" onclick="saveHoleData()" style="margin-top:15px;">GUARDAR HOYO</button>
     </div>
 
     <div id="screen-summary" class="screen">
@@ -174,7 +171,6 @@
             <button id="tab-map" onclick="toggleSummaryView('map')" style="flex:1; padding:10px;">MAPA</button>
             <button id="tab-stats" onclick="toggleSummaryView('stats')" style="flex:1; padding:10px; background:var(--primary); color:white;">TARJETA</button>
         </div>
-        
         <div id="view-stats" class="summary-view" style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
             <div id="summary-stats-bar-top" class="stats-bar"></div>
             <div class="table-container">
@@ -187,10 +183,9 @@
                     <tbody id="scorecard-body"></tbody>
                 </table>
             </div>
-            <div id="net-results" style="background:white; padding:10px; border-top:1px solid #ddd; font-size:1rem; text-align:center; font-weight:bold; flex-shrink:0;"></div>
+            <div id="net-results" style="background:white; padding:8px; border-top:1px solid #ddd; font-size:1rem; text-align:center; font-weight:bold; flex-shrink:0;"></div>
             <div id="summary-stats-bar-bottom" class="stats-bar"></div>
         </div>
-
         <div id="view-map" class="summary-view" style="display:none; flex-direction:column; flex:1; overflow:hidden;">
             <div style="padding:5px;"><select id="summary-filter" onchange="renderSummaryMarks()" style="width:100%; padding:8px;"></select></div>
             <div class="map-wrapper" style="background:white;">
@@ -198,7 +193,6 @@
                 <div id="summary-marks-container"></div>
             </div>
         </div>
-
         <div style="padding:5px; flex-shrink:0;">
             <button class="btn-sec" style="width:100%; padding:12px;" onclick="changeScreen('step-hole')">Volver a Hoyos</button>
         </div>
@@ -212,10 +206,9 @@
     const HOLE_HCP = { 1:15, 2:17, 3:9, 4:11, 5:3, 6:13, 7:1, 8:5, 9:7, 10:2, 11:8, 12:16, 13:14, 14:12, 15:4, 16:18, 17:10, 18:6 };
     const CLUBS = ["D", "M", "3", "4", "5", "6", "7", "8", "9", "P", "A", "56", "60"];
     
-    let rounds = JSON.parse(localStorage.getItem('golf_v53_db')) || [];
+    let rounds = JSON.parse(localStorage.getItem('golf_v54_db')) || [];
     let currentId = null, currentHoyo = null, tempCoords = null, girTemp = false, scoreTemp = 0;
 
-    // Inicializar botones de hoyos
     const hGrid = document.getElementById('hole-btns');
     const qSelect = document.getElementById('hoyo-quick-select');
     for(let i=1; i<=18; i++) {
@@ -225,7 +218,6 @@
         let opt = document.createElement('option'); opt.value = i; opt.innerText = i; qSelect.appendChild(opt);
     }
 
-    // Inicializar botones de palos
     const cGrid = document.getElementById('club-btns');
     const sFilter = document.getElementById('summary-filter');
     let oAll = document.createElement('option'); oAll.value = "all"; oAll.innerText = "Todos los Palos"; sFilter.appendChild(oAll);
@@ -234,6 +226,23 @@
         b.onclick = () => confirmShot(p); cGrid.appendChild(b);
         let opt = document.createElement('option'); opt.value = p; opt.innerText = p; sFilter.appendChild(opt);
     });
+
+    // EVENTO DE CLICK EN EL MAPA MEJORADO
+    document.getElementById('map-clicker').onclick = function(e) {
+        let rect = this.getBoundingClientRect();
+        // Cálculo de coordenadas relativas
+        let x = ((e.clientX - rect.left) / rect.width) * 100;
+        let y = ((e.clientY - rect.top) / rect.height) * 100;
+        
+        tempCoords = { x: x.toFixed(2), y: y.toFixed(2) };
+        document.getElementById('club-selector-overlay').style.display = 'flex';
+    };
+
+    function confirmShot(palo) {
+        let r = rounds.find(x => x.id === currentId);
+        r.golpes.push({ h: currentHoyo, p: palo, x: tempCoords.x, y: tempCoords.y });
+        save(); closeClubs(); updateMapScreen();
+    }
 
     function changeScreen(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -255,24 +264,12 @@
         save(); document.getElementById('hcap-value').value = ""; changeScreen('step-hole');
     }
 
-    function save() { localStorage.setItem('golf_v53_db', JSON.stringify(rounds)); }
+    function save() { localStorage.setItem('golf_v54_db', JSON.stringify(rounds)); }
 
     function updateMapScreen() {
         document.getElementById('hoyo-quick-select').value = currentHoyo;
         document.getElementById('par-info').innerText = "P" + PARS[currentHoyo] + " (Idx " + HOLE_HCP[currentHoyo] + ")";
         renderMarks('marks-container', true); updateSidebar();
-    }
-
-    document.getElementById('map-clicker').onclick = function(e) {
-        let rect = this.getBoundingClientRect();
-        tempCoords = { x: (((e.clientX - rect.left) / rect.width) * 100).toFixed(2), y: (((e.clientY - rect.top) / rect.height) * 100).toFixed(2) };
-        document.getElementById('club-selector-overlay').style.display = 'flex';
-    };
-
-    function confirmShot(palo) {
-        let r = rounds.find(x => x.id === currentId);
-        r.golpes.push({ h: currentHoyo, p: palo, x: tempCoords.x, y: tempCoords.y });
-        save(); closeClubs(); updateMapScreen();
     }
 
     function renderMarks(containerId, currentOnly, filterPalo = "all") {
