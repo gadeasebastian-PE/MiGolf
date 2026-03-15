@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Mi Golf v5.5</title>
+    <title>Mi Golf v5.6</title>
     <style>
         :root { --primary: #1b5e20; --bg: #f0f4f0; --white: #ffffff; --accent: #ff9800; --text: #333; --gir: #673ab7; }
-        
-        /* BLOQUEO TOTAL DE NAVEGADOR */
-        html, body { 
+
+        /* BLOQUEO ESTRUCTURAL */
+        html, body {
             height: 100dvh; width: 100vw; margin: 0; padding: 0;
             overflow: hidden; touch-action: none; overscroll-behavior: none;
             font-family: -apple-system, system-ui, sans-serif; background: var(--bg);
@@ -19,24 +19,28 @@
         .screen { display: none; flex-direction: column; height: 100%; width: 100%; overflow: hidden; }
         .active { display: flex; }
 
-        /* PANTALLA MAPA - OPTIMIZADA */
+        /* ZONA DEL MAPA REFORZADA */
         .sidebar-horizontal { height: 45px; display: flex; overflow-x: auto; background: white; border-bottom: 1px solid #ccc; flex-shrink: 0; }
         .sidebar-item { min-width: 45px; text-align: center; border-right: 1px solid #eee; font-size: 0.6rem; padding-top: 4px; flex-shrink: 0; }
         .sidebar-item.current { background: #fff9c4; font-weight: bold; }
         .info-bar { height: 35px; background: white; border-left: 4px solid var(--primary); display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-size: 0.8rem; font-weight: bold; flex-shrink: 0; }
 
-        /* EL CONTENEDOR DEL MAPA ES AHORA EL RECEPTOR TÁCTIL */
-        .map-wrapper { 
-            flex-grow: 1; position: relative; background: #fff; overflow: hidden;
+        .map-wrapper {
+            flex: 1; position: relative; background: #ccc; overflow: hidden;
             width: 100%; display: flex; align-items: center; justify-content: center;
-            cursor: crosshair; touch-action: none;
         }
-        /* La imagen NO recibe toques para no interferir */
-        .map-wrapper img { max-width: 100%; max-height: 100%; object-fit: contain; pointer-events: none; -webkit-user-drag: none; }
-        
-        #marks-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .map-wrapper img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
 
-        .dot { position: absolute; width: 14px; height: 14px; background: red; border: 1.5px solid white; border-radius: 50%; transform: translate(-50%, -50%); z-index: 10; }
+        /* CAPA INVISIBLE PARA CLICKS */
+        #touch-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 100; pointer-events: auto; touch-action: none;
+            background: rgba(0,0,0,0); /* Totalmente transparente */
+        }
+
+        #marks-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; }
+
+        .dot { position: absolute; width: 14px; height: 14px; background: red; border: 1.5px solid white; border-radius: 50%; transform: translate(-50%, -50%); }
         .dot-label { position: absolute; font-size: 8px; color: white; background: rgba(0,0,0,0.8); padding: 1px 3px; border-radius: 2px; transform: translate(10px, -10px); white-space: nowrap; }
 
         .footer-btns { height: 60px; display: flex; gap: 5px; padding: 5px; background: var(--bg); flex-shrink: 0; }
@@ -46,12 +50,14 @@
         .btn-gir { border: 2px solid var(--gir); color: var(--gir); flex: 1; }
         .btn-gir.selected { background: var(--gir); color: white; }
 
-        /* TABLA */
         .table-container { flex: 1; overflow-y: auto; background: white; }
         table { width: 100%; border-collapse: collapse; font-size: 0.52rem; }
         th, td { padding: 5px 1px; border: 1px solid #eee; text-align: center; }
         .stats-bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; padding: 6px; background: #fff; border-radius: 8px; border: 1px solid #ddd; font-size: 0.55rem; text-align: center; flex-shrink: 0; margin: 5px; }
         .stat-val { font-size: 1rem; font-weight: bold; display: block; }
+
+        #club-selector-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; }
+        .club-modal { background: white; padding: 15px; border-radius: 12px; width: 90%; max-width: 300px; }
     </style>
 </head>
 <body>
@@ -87,10 +93,13 @@
             <span>H: <select id="hoyo-quick-select" onchange="jumpToHole(this.value)" style="font-size:0.9rem;"></select></span>
             <span id="par-info"></span>
         </div>
-        <div class="map-wrapper" id="map-clicker">
+
+        <div class="map-wrapper">
             <img src="mapa.jpg" alt="Mapa">
+            <div id="touch-overlay"></div>
             <div id="marks-container"></div>
         </div>
+
         <div class="footer-btns">
             <button style="flex:1" onclick="undoShot()">Undo</button>
             <button style="flex:1" onclick="changeScreen('step-hole')">Hoyos</button>
@@ -147,11 +156,10 @@
     const PARS = { 1:4, 2:4, 3:3, 4:5, 5:4, 6:4, 7:3, 8:4, 9:5, 10:4, 11:3, 12:4, 13:3, 14:4, 15:4, 16:4, 17:4, 18:5 };
     const HOLE_HCP = { 1:15, 2:17, 3:9, 4:11, 5:3, 6:13, 7:1, 8:5, 9:7, 10:2, 11:8, 12:16, 13:14, 14:12, 15:4, 16:18, 17:10, 18:6 };
     const CLUBS = ["D", "M", "3", "4", "5", "6", "7", "8", "9", "P", "A", "56", "60"];
-    
-    let rounds = JSON.parse(localStorage.getItem('golf_v55_db')) || [];
+
+    let rounds = JSON.parse(localStorage.getItem('golf_v56_db')) || [];
     let currentId = null, currentHoyo = null, tempCoords = null, girTemp = false, scoreTemp = 0;
 
-    // INICIALIZACIÓN
     const hGrid = document.getElementById('hole-btns');
     const qSelect = document.getElementById('hoyo-quick-select');
     for(let i=1; i<=18; i++) {
@@ -169,21 +177,17 @@
         let opt = document.createElement('option'); opt.value = p; opt.innerText = p; sFilter.appendChild(opt);
     });
 
-    // --- NUEVO SISTEMA TACTIL NATIVO PARA IPHONE ---
-    const mapContainer = document.getElementById('map-clicker');
-    mapContainer.addEventListener('touchstart', function(e) {
-        // Prevenir comportamiento por defecto de iOS (zoom/guardar imagen)
+    // --- INTERACCIÓN POINTER DOWN SOBRE CAPA INVISIBLE ---
+    const touchOverlay = document.getElementById('touch-overlay');
+    touchOverlay.addEventListener('pointerdown', function(e) {
         e.preventDefault();
-        
         let rect = this.getBoundingClientRect();
-        let touch = e.touches[0];
-        
-        let x = ((touch.clientX - rect.left) / rect.width) * 100;
-        let y = ((touch.clientY - rect.top) / rect.height) * 100;
-        
+        let x = ((e.clientX - rect.left) / rect.width) * 100;
+        let y = ((e.clientY - rect.top) / rect.height) * 100;
+
         tempCoords = { x: x.toFixed(2), y: y.toFixed(2) };
         document.getElementById('club-selector-overlay').style.display = 'flex';
-    }, { passive: false });
+    });
 
     function confirmShot(palo) {
         let r = rounds.find(x => x.id === currentId);
@@ -211,7 +215,7 @@
         save(); document.getElementById('hcap-value').value = ""; changeScreen('step-hole');
     }
 
-    function save() { localStorage.setItem('golf_v55_db', JSON.stringify(rounds)); }
+    function save() { localStorage.setItem('golf_v56_db', JSON.stringify(rounds)); }
     function updateMapScreen() {
         document.getElementById('hoyo-quick-select').value = currentHoyo;
         document.getElementById('par-info').innerText = "P" + PARS[currentHoyo] + " (Idx " + HOLE_HCP[currentHoyo] + ")";
@@ -236,7 +240,7 @@
         let html = ''; let totalGross = 0; let netAcumulado = 0;
         for(let i=1; i<=18; i++) {
             let s = r.holeStats[i]?.score; let gCount = r.golpes.filter(x => x.h === i).length;
-            let val = s || (gCount > 0 ? gCount : '-'); 
+            let val = s || (gCount > 0 ? gCount : '-');
             if(s) {
                 totalGross += s;
                 let strokes = (r.handicap >= HOLE_HCP[i]) ? 1 : 0;
