@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Mi Golf v9.1</title>
+    <title>Mi Golf v9.2</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root { --primary: #1b5e20; --bg: #f0f4f0; --white: #ffffff; --accent: #ff9800; --text: #333; --gir: #673ab7; }
-
-        html, body {
+        
+        html, body { 
             height: 100dvh; width: 100vw; margin: 0; padding: 0;
             overflow: hidden; font-family: -apple-system, system-ui, sans-serif; background: var(--bg);
             touch-action: manipulation; -webkit-user-select: none; user-select: none;
@@ -21,8 +21,8 @@
         .active { display: flex; }
 
         /* BOTONES GENERALES */
-        button {
-            border-radius: 8px; font-weight: bold; border: 1px solid #ccc; background: white;
+        button { 
+            border-radius: 8px; font-weight: bold; border: 1px solid #ccc; background: white; 
             -webkit-tap-highlight-color: transparent; font-size: 0.8rem;
             padding: 10px 15px; margin: 0; align-self: center; cursor: pointer;
         }
@@ -31,7 +31,7 @@
         .btn-jpg { background: #d32f2f !important; color: white !important; border: none !important; min-width: 70px !important; padding: 6px !important; font-size: 0.6rem !important; }
         .btn-dark { background: #333 !important; color: white !important; border: 1px solid #000 !important; }
         .btn-menu-small { background: #444 !important; color: white !important; border: none !important; }
-
+        
         .btn-gir { border: 2px solid var(--gir); color: var(--gir); flex: 1; min-width: 0; padding: 12px 0; }
         .btn-gir.selected { background: var(--gir) !important; color: white !important; }
 
@@ -44,10 +44,10 @@
         .stat-box { display: flex; flex-direction: column; align-items: center; }
         .stat-val { font-size: 1rem; font-weight: bold; display: block; line-height: 1; margin-bottom: 2px; }
 
-        /* BARRA GROSS/NETO RECTIFICADA */
-        .hole-screen-summary {
-            width: 92%; background: var(--primary); color: white; border-radius: 8px;
-            display: flex; justify-content: space-around; padding: 12px 0; margin-top: 15px;
+        /* BARRA GROSS/NETO */
+        .hole-screen-summary { 
+            width: 92%; background: var(--primary); color: white; border-radius: 8px; 
+            display: flex; justify-content: space-around; padding: 12px 0; margin-top: 15px; 
             font-weight: bold; font-size: 1rem; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
@@ -56,9 +56,10 @@
         .map-header h2 { margin: 0; font-size: 1.3rem; color: var(--primary); }
         .live-scores { font-size: 0.85rem; font-weight: bold; text-align: right; }
 
-        /* MAPA AREA */
+        /* MAPA AREA - ESTIRADO AL ANCHO SOLICITADO */
         .map-wrapper { flex: 1; position: relative; background: #ddd; overflow: hidden; width: 100%; display: flex; align-items: center; justify-content: center; touch-action: none; }
-        .map-wrapper img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+        .map-wrapper img { width: 100%; height: 100%; object-fit: fill; pointer-events: none; } /* object-fit: fill estira la imagen al ancho y alto del contenedor */
+        
         #touch-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 999; cursor: pointer; background: rgba(255,255,255,0.01); }
         #marks-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 500; }
         .dot { position: absolute; width: 14px; height: 14px; border: 1.5px solid white; border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 3px rgba(0,0,0,0.5); }
@@ -114,10 +115,7 @@
     </div>
 
     <div id="step-hole" class="screen">
-        <div class="hole-screen-summary" id="hole-screen-summary-vals">
-            <span>GROSS: 0</span>
-            <span>NETO: 0</span>
-        </div>
+        <div class="hole-screen-summary" id="hole-screen-summary-vals"><span>GROSS: 0</span><span>NETO: 0</span></div>
         <div id="global-stats" class="stats-bar"></div>
         <div class="grid-3-cols" id="hole-btns"></div>
         <div style="padding:15px; display: flex; flex-direction: column; gap: 8px; width: 100%; align-items: center; background: white; border-top: 1px solid #ddd;">
@@ -196,16 +194,8 @@
             <div class="map-wrapper" style="background:white;"><img src="mapa.jpg"><div id="summary-marks-container"></div></div>
         </div>
         <div style="padding:10px; flex-shrink:0; display: flex; flex-direction: column; align-items: center; width: 100%; background: white; border-top: 1px solid #ddd; gap:5px;">
-            <button class="btn-sec" style="width: 90%;" onclick="changeScreen('step-hole')">VOLVER A SELECCION HOYOS</button>
+            <button class="btn-sec" onclick="changeScreen('step-hole')" style="min-width: 180px;">VOLVER A SELECCION HOYOS</button>
             <button class="btn-menu-small" onclick="confirmExit()">MENU PRINCIPAL</button>
-        </div>
-    </div>
-
-    <div id="screen-history" class="screen">
-        <h3 style="margin-top: 20px;">HISTORIAL DE RONDAS</h3>
-        <div id="history-list" style="overflow-y: auto; flex: 1; width: 100%; display: flex; flex-direction: column; align-items: center; padding-bottom: 20px;"></div>
-        <div style="padding:20px; width: 100%; display: flex; justify-content: center; background: white; border-top: 1px solid #ddd;">
-            <button class="btn-sec" style="width: 200px;" onclick="changeScreen('screen-menu')">VOLVER AL MENU</button>
         </div>
     </div>
 </div>
@@ -217,7 +207,7 @@
     const PARS = { 1:4, 2:4, 3:3, 4:5, 5:4, 6:4, 7:3, 8:4, 9:5, 10:4, 11:3, 12:4, 13:3, 14:4, 15:4, 16:4, 17:4, 18:5 };
     const HOLE_HCP = { 1:15, 2:17, 3:9, 4:11, 5:3, 6:13, 7:1, 8:5, 9:7, 10:2, 11:8, 12:16, 13:14, 14:12, 15:4, 16:18, 17:10, 18:6 };
     const CLUBS = ["D", "M", "3", "4", "5", "6", "7", "8", "9", "P", "A", "56", "60"];
-    let rounds = JSON.parse(localStorage.getItem('golf_v91_db')) || [];
+    let rounds = JSON.parse(localStorage.getItem('golf_v92_db')) || [];
     let currentId = null, currentHoyo = 1, tempCoords = null, girTemp = false, scoreTemp = 0;
 
     function getClubColor(p) { if(p==='D') return 'red'; if(['M','3','4'].includes(p)) return 'yellow'; if(['5','6','7','8','9','P'].includes(p)) return 'black'; if(['A','56','60'].includes(p)) return 'violet'; return 'red'; }
@@ -226,7 +216,7 @@
         const hGrid = document.getElementById('hole-btns');
         const qSelect = document.getElementById('hoyo-quick-select');
         hGrid.innerHTML = ''; qSelect.innerHTML = '';
-        for(let i=1; i<=18; i++) {
+        for(let i=1; i<=18; i++) { 
             let b = document.createElement('button'); b.innerText = i; b.onclick = () => { currentHoyo = i; changeScreen('step-map'); }; hGrid.appendChild(b);
             let opt = document.createElement('option'); opt.value = i; opt.innerText = i; qSelect.appendChild(opt);
         }
@@ -290,13 +280,13 @@
         save(); document.getElementById('hcap-value').value = ""; changeScreen('step-hole');
     }
 
-    function save() { localStorage.setItem('golf_v91_db', JSON.stringify(rounds)); }
+    function save() { localStorage.setItem('golf_v92_db', JSON.stringify(rounds)); }
 
     function renderMarks(containerId, currentOnly, filterPalo = "all") {
         let cont = document.getElementById(containerId); if(!cont) return;
         cont.innerHTML = "";
         let r = rounds.find(x => x.id === currentId); if(!r) return;
-        let list = r.golpes;
+        let list = r.golpes; 
         if(currentOnly) list = list.filter(g => g.h === currentHoyo);
         if(filterPalo !== "all") list = list.filter(g => g.p === filterPalo);
         list.forEach(g => {
@@ -324,7 +314,7 @@
         return `<div style="color:#d4af37" class="stat-box"><span class="stat-val">${c.e}</span>Aguila</div><div style="color:blue" class="stat-box"><span class="stat-val">${c.bir}</span>Birdie</div><div style="color:green" class="stat-box"><span class="stat-val">${c.par}</span>Par</div><div style="color:orange" class="stat-box"><span class="stat-val">${c.bog}</span>Boggey</div><div style="color:red" class="stat-box"><span class="stat-val">${c.pbog}</span>+Boggey</div>`;
     }
 
-    function toggleSummaryView(v) { document.getElementById('view-map').style.display = v==='map'?'flex':'none'; document.getElementById('view-stats').style.display = v==='stats'?'flex':'none'; document.getElementById('tab-map').style.background = v==='map'?'var(--primary)':'white'; document.getElementById('tab-map').style.color = v==='map'?'white':'black'; document.getElementById('tab-stats').style.background = v==='stats'?'var(--primary)':'white'; document.getElementById('tab-stats').style.color = v==='stats'?'white':'black'; }
+    function toggleSummaryView(v) { document.getElementById('view-map').style.display = v==='map'?'flex':'none'; document.getElementById('view-stats').style.display = v==='stats'?'flex':'none'; document.getElementById('tab-map').style.background = v==='map'?'var(--primary)':'white'; document.getElementById('tab-stats').style.background = v==='stats'?'var(--primary)':'white'; }
 
     function updateSummaryData() {
         let r = rounds.find(x => x.id === currentId); if(!r) return;
@@ -341,13 +331,13 @@
     }
 
     function showHistory() {
-        rounds = JSON.parse(localStorage.getItem('golf_v91_db')) || [];
+        rounds = JSON.parse(localStorage.getItem('golf_v92_db')) || [];
         let list = document.getElementById('history-list'); list.innerHTML = "";
         if(rounds.length === 0) list.innerHTML = "<p style='margin-top:20px;'>No hay rondas guardadas.</p>";
-        [...rounds].reverse().forEach(r => {
+        [...rounds].reverse().forEach(r => { 
             let b = document.createElement('button'); b.className = "btn-sec"; b.style.width="90%"; b.style.minHeight="50px"; b.style.marginBottom="5px";
             b.innerText = r.nombre + " (Hcp: " + r.handicap + ")";
-            b.onclick = () => { currentId = r.id; changeScreen('step-hole'); }; list.appendChild(b);
+            b.onclick = () => { currentId = r.id; changeScreen('step-hole'); }; list.appendChild(b); 
         });
         changeScreen('screen-history');
     }
