@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Mi Golf v9.2</title>
+    <title>Mi Golf v9.3</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root { --primary: #1b5e20; --bg: #f0f4f0; --white: #ffffff; --accent: #ff9800; --text: #333; --gir: #673ab7; }
@@ -44,7 +44,7 @@
         .stat-box { display: flex; flex-direction: column; align-items: center; }
         .stat-val { font-size: 1rem; font-weight: bold; display: block; line-height: 1; margin-bottom: 2px; }
 
-        /* BARRA GROSS/NETO */
+        /* BARRA GROSS/NETO FORMATO RESTAURADO */
         .hole-screen-summary { 
             width: 92%; background: var(--primary); color: white; border-radius: 8px; 
             display: flex; justify-content: space-around; padding: 12px 0; margin-top: 15px; 
@@ -56,9 +56,9 @@
         .map-header h2 { margin: 0; font-size: 1.3rem; color: var(--primary); }
         .live-scores { font-size: 0.85rem; font-weight: bold; text-align: right; }
 
-        /* MAPA AREA - ESTIRADO AL ANCHO SOLICITADO */
+        /* MAPA AREA */
         .map-wrapper { flex: 1; position: relative; background: #ddd; overflow: hidden; width: 100%; display: flex; align-items: center; justify-content: center; touch-action: none; }
-        .map-wrapper img { width: 100%; height: 100%; object-fit: fill; pointer-events: none; } /* object-fit: fill estira la imagen al ancho y alto del contenedor */
+        .map-wrapper img { width: 100%; height: 100%; object-fit: fill; pointer-events: none; }
         
         #touch-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 999; cursor: pointer; background: rgba(255,255,255,0.01); }
         #marks-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 500; }
@@ -191,11 +191,19 @@
         </div>
         <div id="view-map" class="summary-view" style="display:none; flex-direction:column; flex:1; overflow:hidden; width: 100%;">
             <div style="padding:4px; width: 100%; display: flex; justify-content: center;"><select id="summary-filter" onchange="renderMarks('summary-marks-container', false, this.value)" style="width:90%; padding:8px;"></select></div>
-            <div class="map-wrapper" style="background:white;"><img src="mapa.jpg"><div id="summary-marks-container"></div></div>
+            <div class="map-wrapper" style="background:white;"><img src="mapa.jpg" style="object-fit: contain;"><div id="summary-marks-container"></div></div>
         </div>
         <div style="padding:10px; flex-shrink:0; display: flex; flex-direction: column; align-items: center; width: 100%; background: white; border-top: 1px solid #ddd; gap:5px;">
-            <button class="btn-sec" onclick="changeScreen('step-hole')" style="min-width: 180px;">VOLVER A SELECCION HOYOS</button>
+            <button class="btn-sec" style="width: 90%;" onclick="changeScreen('step-hole')">VOLVER A SELECCION HOYOS</button>
             <button class="btn-menu-small" onclick="confirmExit()">MENU PRINCIPAL</button>
+        </div>
+    </div>
+
+    <div id="screen-history" class="screen">
+        <h3 style="margin-top: 20px;">HISTORIAL DE RONDAS</h3>
+        <div id="history-list" style="overflow-y: auto; flex: 1; width: 100%; display: flex; flex-direction: column; align-items: center; padding-bottom: 20px;"></div>
+        <div style="padding:20px; width: 100%; display: flex; justify-content: center; background: white; border-top: 1px solid #ddd;">
+            <button class="btn-sec" style="width: 200px;" onclick="changeScreen('screen-menu')">VOLVER AL MENU</button>
         </div>
     </div>
 </div>
@@ -207,7 +215,10 @@
     const PARS = { 1:4, 2:4, 3:3, 4:5, 5:4, 6:4, 7:3, 8:4, 9:5, 10:4, 11:3, 12:4, 13:3, 14:4, 15:4, 16:4, 17:4, 18:5 };
     const HOLE_HCP = { 1:15, 2:17, 3:9, 4:11, 5:3, 6:13, 7:1, 8:5, 9:7, 10:2, 11:8, 12:16, 13:14, 14:12, 15:4, 16:18, 17:10, 18:6 };
     const CLUBS = ["D", "M", "3", "4", "5", "6", "7", "8", "9", "P", "A", "56", "60"];
-    let rounds = JSON.parse(localStorage.getItem('golf_v92_db')) || [];
+    
+    // DB NAME ACTUALIZADO PARA ESTA VERSION
+    const DB_NAME = 'golf_v93_db';
+    let rounds = JSON.parse(localStorage.getItem(DB_NAME)) || [];
     let currentId = null, currentHoyo = 1, tempCoords = null, girTemp = false, scoreTemp = 0;
 
     function getClubColor(p) { if(p==='D') return 'red'; if(['M','3','4'].includes(p)) return 'yellow'; if(['5','6','7','8','9','P'].includes(p)) return 'black'; if(['A','56','60'].includes(p)) return 'violet'; return 'red'; }
@@ -280,7 +291,7 @@
         save(); document.getElementById('hcap-value').value = ""; changeScreen('step-hole');
     }
 
-    function save() { localStorage.setItem('golf_v92_db', JSON.stringify(rounds)); }
+    function save() { localStorage.setItem(DB_NAME, JSON.stringify(rounds)); }
 
     function renderMarks(containerId, currentOnly, filterPalo = "all") {
         let cont = document.getElementById(containerId); if(!cont) return;
@@ -314,7 +325,7 @@
         return `<div style="color:#d4af37" class="stat-box"><span class="stat-val">${c.e}</span>Aguila</div><div style="color:blue" class="stat-box"><span class="stat-val">${c.bir}</span>Birdie</div><div style="color:green" class="stat-box"><span class="stat-val">${c.par}</span>Par</div><div style="color:orange" class="stat-box"><span class="stat-val">${c.bog}</span>Boggey</div><div style="color:red" class="stat-box"><span class="stat-val">${c.pbog}</span>+Boggey</div>`;
     }
 
-    function toggleSummaryView(v) { document.getElementById('view-map').style.display = v==='map'?'flex':'none'; document.getElementById('view-stats').style.display = v==='stats'?'flex':'none'; document.getElementById('tab-map').style.background = v==='map'?'var(--primary)':'white'; document.getElementById('tab-stats').style.background = v==='stats'?'var(--primary)':'white'; }
+    function toggleSummaryView(v) { document.getElementById('view-map').style.display = v==='map'?'flex':'none'; document.getElementById('view-stats').style.display = v==='stats'?'flex':'none'; document.getElementById('tab-map').style.background = v==='map'?'var(--primary)':'white'; document.getElementById('tab-map').style.color = v==='map'?'white':'black'; document.getElementById('tab-stats').style.background = v==='stats'?'var(--primary)':'white'; document.getElementById('tab-stats').style.color = v==='stats'?'white':'black'; }
 
     function updateSummaryData() {
         let r = rounds.find(x => x.id === currentId); if(!r) return;
@@ -330,26 +341,43 @@
         renderMarks('summary-marks-container', false, document.getElementById('summary-filter').value);
     }
 
+    // ARREGLO DEL HISTORIAL: CARGA CORRECTA
     function showHistory() {
-        rounds = JSON.parse(localStorage.getItem('golf_v92_db')) || [];
+        // Volver a leer localStorage para asegurar datos frescos
+        rounds = JSON.parse(localStorage.getItem(DB_NAME)) || [];
         let list = document.getElementById('history-list'); list.innerHTML = "";
-        if(rounds.length === 0) list.innerHTML = "<p style='margin-top:20px;'>No hay rondas guardadas.</p>";
-        [...rounds].reverse().forEach(r => { 
-            let b = document.createElement('button'); b.className = "btn-sec"; b.style.width="90%"; b.style.minHeight="50px"; b.style.marginBottom="5px";
-            b.innerText = r.nombre + " (Hcp: " + r.handicap + ")";
-            b.onclick = () => { currentId = r.id; changeScreen('step-hole'); }; list.appendChild(b); 
-        });
+        if(rounds.length === 0) {
+            list.innerHTML = "<p style='margin-top:20px;'>No hay rondas guardadas.</p>";
+        } else {
+            // Creamos una copia al reves para mostrar la mas nueva primero
+            [...rounds].reverse().forEach(r => { 
+                let b = document.createElement('button'); 
+                b.className = "btn-sec"; 
+                b.style.width="90%"; 
+                b.style.minHeight="50px"; 
+                b.style.marginBottom="5px";
+                b.innerText = r.nombre + " (Hcp: " + r.handicap + ")";
+                b.onclick = () => { 
+                    currentId = r.id; 
+                    changeScreen('step-hole'); 
+                }; 
+                list.appendChild(b); 
+            });
+        }
         changeScreen('screen-history');
     }
 
     function clearAllData() { if(confirm("Borrar todo?")) { localStorage.clear(); location.reload(); } }
 
+    /* EXPORTAR COMO JPG - MODIFICADO ANCHO MAPA */
     function exportAsJPG() {
         const r = rounds.find(x => x.id === currentId);
         const area = document.getElementById('capture-area');
         let html = `<h1 style="text-align:center; font-family:sans-serif;">Ronda: ${r.nombre} (Hcp ${r.handicap})</h1>`;
+        // Tabla igual (ancho completo de la captura)
         html += `<table style="width:100%; border-collapse:collapse; margin-bottom:20px; border:1px solid #000;">${document.getElementById('source-table').innerHTML}</table>`;
-        html += `<div style="position:relative; width:100%; height:600px; border:1px solid #000;"><img src="mapa.jpg" style="width:100%; height:100%; object-fit:contain;">`;
+        // Mapa 25% mas angosto (75% ancho) y centrado automáticamente con margin auto
+        html += `<div style="position:relative; width:75%; margin: 0 auto; height:600px; border:1px solid #000;"><img src="mapa.jpg" style="width:100%; height:100%; object-fit:contain;">`;
         r.golpes.forEach(g => {
             html += `<div style="position:absolute; width:12px; height:12px; border:1.5px solid white; border-radius:50%; left:${g.x}%; top:${g.y}%; background-color:${getClubColor(g.p)}; transform:translate(-50%,-50%);"></div>`;
             html += `<span style="position:absolute; font-size:9px; color:#000; font-weight:bold; left:${g.x}%; top:${g.y}%; transform:translate(8px,-8px); background:rgba(255,255,255,0.7); padding:1px;">${g.p}-H${g.h}</span>`;
