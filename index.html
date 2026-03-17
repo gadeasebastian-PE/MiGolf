@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Mi Golf v11.0</title>
+    <title>Mi Golf v11.6</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root { --primary: #1b5e20; --bg: #f0f4f0; --white: #ffffff; --accent: #ff9800; --text: #333; --gir: #673ab7; }
@@ -47,13 +47,12 @@
             font-weight: bold; font-size: 0.85rem; flex-shrink: 0;
         }
 
-        .map-header { width: 100%; background: #fff; border-bottom: 1px solid #ccc; padding: 8px 15px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
-        .map-header h2 { margin: 0; font-size: 1.1rem; color: var(--primary); text-align: center; width: 100%; }
+        .map-header { width: 100%; background: #fff; border-bottom: 1px solid #ccc; padding: 8px 10px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+        .map-header h2 { margin: 0; font-size: 0.86rem; color: var(--primary); text-align: center; width: 100%; white-space: nowrap; }
         .live-scores-map { font-size: 0.75rem; font-weight: bold; color: #666; margin-top: 2px; }
 
-        /* MAPA: AJUSTE PRIORITARIO AL ALTO PARA EVITAR TAMAÑO GIGANTE */
         .map-wrapper {
-            flex: 1; position: relative; background: #ddd;
+            flex: 1; position: relative; background: var(--bg);
             display: flex; align-items: center; justify-content: center;
             width: 100%; overflow: hidden; touch-action: none;
         }
@@ -74,8 +73,8 @@
             object-fit: contain;
         }
 
-        #touch-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 999; cursor: pointer; background: transparent; }
-        #marks-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 500; }
+        #touch-overlay, #touch-overlay-driving { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 999; cursor: pointer; background: transparent; }
+        #marks-container, #marks-container-driving { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 500; }
         .dot { position: absolute; width: 12px; height: 12px; border: 1.5px solid white; border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 3px rgba(0,0,0,0.5); }
         .dot-label { position: absolute; font-size: 8px; color: white; background: rgba(0,0,0,0.8); padding: 1px 3px; border-radius: 2px; transform: translate(8px, -8px); white-space: nowrap; }
 
@@ -118,11 +117,37 @@
         <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%;">
             <h2 style="margin-bottom: 25px;">MENU PRINCIPAL</h2>
             <button class="btn-large" onclick="changeScreen('screen-init-hcap')">NUEVA RONDA</button>
+            <button class="btn-large btn-accent" style="margin: 10px 0;" onclick="startDriving()">DRIVING RANGE</button>
             <button class="btn-sec" style="min-width: 200px;" onclick="showHistory()">HISTORIAL</button>
         </div>
         <div class="footer-credits">
             Versi&oacute;n desarrollada para Iphone<br>
             Desarrollador: Sebasti&aacute;n Gadea - Colaborador: Tom&aacute;s Ramos
+        </div>
+    </div>
+
+    <div id="screen-driving" class="screen">
+        <div class="map-header">
+            <h2>DRIVING RANGE</h2>
+            <div style="margin-top:5px; width:100%; display:flex; justify-content:center;">
+                <select id="driving-club-filter" onchange="updateDrivingScreen()" style="padding:5px; border-radius:5px; font-size:0.7rem; width:80%;">
+                    <option value="all">Todos los Palos</option>
+                </select>
+            </div>
+        </div>
+        <div class="map-wrapper">
+            <div class="map-container-inner">
+                <img src="driving.png" alt="Driving Range">
+                <div id="touch-overlay-driving" onclick="handleMapClick(event, 'driving')"></div>
+                <div id="marks-container-driving"></div>
+            </div>
+        </div>
+        <div class="footer-btns">
+            <div class="footer-row-1">
+                <button onclick="undoDrivingShot()">Eliminar golpe</button>
+                <button class="btn-danger" onclick="clearDrivingData()">Borrar Todo</button>
+            </div>
+            <button class="btn-menu-small" onclick="changeScreen('screen-menu')">Menu Principal</button>
         </div>
     </div>
 
@@ -157,7 +182,7 @@
         <div class="map-wrapper">
             <div class="map-container-inner" id="map-inner-game">
                 <img src="mapa.jpg" alt="Mapa" id="main-map-img">
-                <div id="touch-overlay" onclick="handleMapClick(event)"></div>
+                <div id="touch-overlay" onclick="handleMapClick(event, 'game')"></div>
                 <div id="marks-container"></div>
             </div>
         </div>
@@ -242,21 +267,31 @@
     const COURSES = {
         "La Carolina Golf & Country Club": {
             pars: { 1:4, 2:4, 3:3, 4:5, 5:4, 6:4, 7:3, 8:4, 9:5, 10:4, 11:3, 12:4, 13:3, 14:4, 15:4, 16:4, 17:4, 18:5 },
-            hcp: { 1:15, 2:17, 3:9, 4:11, 5:3, 6:13, 7:1, 8:5, 9:7, 10:2, 11:8, 12:16, 13:14, 14:12, 15:4, 16:18, 17:10, 18:6 }
+            hcp: { 1:15, 2:17, 3:9, 4:11, 5:3, 6:13, 7:1, 8:5, 9:7, 10:2, 11:8, 12:16, 13:14, 14:12, 15:4, 16:18, 17:10, 18:6 },
+            yardas: {
+                "Azul": { 1:383, 2:360, 3:170, 4:515, 5:400, 6:297, 7:185, 8:428, 9:519, 10:417, 11:170, 12:405, 13:134, 14:368, 15:388, 16:320, 17:330, 18:543 },
+                "Blanca": { 1:369, 2:347, 3:154, 4:487, 5:371, 6:284, 7:154, 8:381, 9:494, 10:390, 11:134, 12:368, 13:125, 14:349, 15:374, 16:305, 17:315, 18:472 }
+            }
         },
         "Marayui Country Golf - Chapadmalal": {
             pars: { 1:4, 2:4, 3:4, 4:3, 5:4, 6:4, 7:5, 8:3, 9:5, 10:4, 11:4, 12:4, 13:3, 14:4, 15:4, 16:5, 17:3, 18:5 },
-            hcp: { 1:7, 2:9, 3:11, 4:15, 5:5, 6:13, 7:3, 8:17, 9:1, 10:6, 11:12, 12:10, 13:18, 14:2, 15:14, 16:8, 17:16, 18:4 }
+            hcp: { 1:7, 2:9, 3:11, 4:15, 5:5, 6:13, 7:3, 8:17, 9:1, 10:6, 11:12, 12:10, 13:18, 14:2, 15:14, 16:8, 17:16, 18:4 },
+            yardas: { "Azul": {}, "Blanca": {} }
         },
         "Miramar Links": {
             pars: { 1:4, 2:3, 3:4, 4:4, 5:5, 6:5, 7:3, 8:4, 9:4, 10:5, 11:4, 12:3, 13:4, 14:4, 15:5, 16:3, 17:4, 18:4 },
-            hcp: { 1:1, 2:13, 3:17, 4:11, 5:7, 6:9, 7:15, 8:3, 9:5, 10:18, 11:10, 12:14, 13:12, 14:6, 15:2, 16:16, 17:8, 18:4 }
+            hcp: { 1:1, 2:13, 3:17, 4:11, 5:7, 6:9, 7:15, 8:3, 9:5, 10:18, 11:10, 12:14, 13:12, 14:6, 15:2, 16:16, 17:8, 18:4 },
+            yardas: { "Azul": {}, "Blanca": {} }
         }
     };
+
     const CLUBS = ["D", "M3", "M5", "H3", "H4", "4", "5", "6", "7", "8", "9", "P", "52", "56", "60"];
     const DB_NAME = 'golf_stable_data';
+    const DRIVING_DB = 'driving_shots_data';
+
     let rounds = JSON.parse(localStorage.getItem(DB_NAME)) || [];
-    let currentId = null, currentHoyo = 1, tempCoords = null, girTemp = false, scoreTemp = 0;
+    let drivingShots = JSON.parse(localStorage.getItem(DRIVING_DB)) || [];
+    let currentId = null, currentHoyo = 1, tempCoords = null, girTemp = false, scoreTemp = 0, currentContext = 'game';
 
     function getClubColor(p) {
         if(p==='D') return 'red';
@@ -288,13 +323,18 @@
         const cGrid = document.getElementById('club-btns');
         cGrid.innerHTML = '';
         CLUBS.forEach(p => { let b = document.createElement('button'); b.innerText = p; b.onclick = () => confirmShot(p); cGrid.appendChild(b); });
-        const sumFilter = document.getElementById('summary-filter');
-        sumFilter.innerHTML = '<option value="all">Todos los Palos</option>';
-        CLUBS.forEach(c => { let opt = document.createElement('option'); opt.value = c; opt.innerText = c; sumFilter.appendChild(opt); });
+        ['summary-filter', 'driving-club-filter'].forEach(id => {
+            const sel = document.getElementById(id);
+            if(sel) {
+                sel.innerHTML = '<option value="all">Todos los Palos</option>';
+                CLUBS.forEach(c => { let opt = document.createElement('option'); opt.value = c; opt.innerText = c; sel.appendChild(opt); });
+            }
+        });
     }
     initApp();
 
-    function handleMapClick(e) {
+    function handleMapClick(e, ctx) {
+        currentContext = ctx;
         const rect = e.currentTarget.getBoundingClientRect();
         tempCoords = {
             x: (((e.clientX - rect.left) / rect.width) * 100).toFixed(2),
@@ -303,17 +343,24 @@
         document.getElementById('club-selector-overlay').style.display = 'flex';
     }
 
-    function changeScreen(id) {
-        document.querySelectorAll('.screen').forEach(s => {
-            s.classList.remove('active');
-            s.style.display = 'none';
-        });
-        const target = document.getElementById(id);
-        target.classList.add('active');
-        target.style.display = 'flex';
+    function confirmShot(palo) {
+        if(currentContext === 'game') {
+            let r = rounds.find(x => x.id === currentId);
+            r.golpes.push({ h: currentHoyo, p: palo, x: tempCoords.x, y: tempCoords.y });
+            save(); updateMapScreen();
+        } else {
+            drivingShots.push({ p: palo, x: tempCoords.x, y: tempCoords.y });
+            saveDriving(); updateDrivingScreen();
+        }
+        closeClubs();
+    }
 
+    function changeScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
+        document.getElementById(id).style.display = 'flex';
         const headerEl = document.getElementById('main-header');
         if(id === 'screen-menu') { headerEl.innerText = "MI GOLF"; return; }
+        if(id === 'screen-driving') { headerEl.innerText = "MI GOLF - DRIVING"; updateDrivingScreen(); return; }
         if(!currentId) return;
         const r = rounds.find(x => x.id === currentId);
         if(!r) return;
@@ -321,6 +368,23 @@
         if(id === 'step-hole') updateHoleScreenStats(r);
         if(id === 'step-map') updateMapScreen();
         if(id === 'screen-summary') { toggleSummaryView('stats'); }
+    }
+
+    function startDriving() { changeScreen('screen-driving'); }
+    function saveDriving() { localStorage.setItem(DRIVING_DB, JSON.stringify(drivingShots)); }
+    function undoDrivingShot() { drivingShots.pop(); saveDriving(); updateDrivingScreen(); }
+    function clearDrivingData() { if(confirm("Deseas borrar todos los golpes de driving?")) { drivingShots = []; saveDriving(); updateDrivingScreen(); } }
+
+    function updateDrivingScreen() {
+        const cont = document.getElementById('marks-container-driving');
+        const filter = document.getElementById('driving-club-filter').value;
+        cont.innerHTML = "";
+        drivingShots.forEach(g => {
+            if(filter !== 'all' && g.p !== filter) return;
+            let d = document.createElement('div'); d.className = 'dot'; d.style.left = g.x + "%"; d.style.top = g.y + "%";
+            d.style.backgroundColor = getClubColor(g.p);
+            let l = document.createElement('span'); l.className = 'dot-label'; l.innerText = g.p; d.appendChild(l); cont.appendChild(d);
+        });
     }
 
     function calculateLiveScores(r) {
@@ -343,7 +407,10 @@
     function updateMapScreen() {
         const r = rounds.find(x => x.id === currentId); if(!r) return;
         let sc = calculateLiveScores(r); const c = COURSES[r.campo]; let totalPar = getCourseTotalPar(r.campo);
-        document.getElementById('current-hole-title').innerText = `HOYO ${currentHoyo} (Par ${c.pars[currentHoyo]} - Hcp ${c.hcp[currentHoyo]})`;
+        let ydsA = c.yardas["Azul"][currentHoyo] || '0';
+        let ydsB = c.yardas["Blanca"][currentHoyo] || '0';
+        let ydsInfo = ` - A: ${ydsA} Yds / B: ${ydsB} Yds`;
+        document.getElementById('current-hole-title').innerText = `HOYO ${currentHoyo} (Par ${c.pars[currentHoyo]} - Hcp ${c.hcp[currentHoyo]}${ydsInfo})`;
         document.getElementById('map-live-scores').innerText = `P: ${totalPar} | G: ${sc.g} | N: ${sc.n > 0 ? '+' : ''}${sc.n}`;
         renderMarks('marks-container', true, "all");
     }
@@ -353,12 +420,7 @@
         scoreTemp = Math.max(1, r.golpes.filter(g => g.h === currentHoyo).length + 2);
         document.getElementById('score-title').innerText = "Hoyo " + currentHoyo;
         document.getElementById('score-val-display').innerText = scoreTemp;
-        setGIR(false);
-        document.getElementById('v-putts').innerText = "2";
-        document.getElementById('v-pen').innerText = "0";
-        document.getElementById('v-bnk').innerText = "0";
-        document.getElementById('v-hzd').innerText = "0";
-        document.getElementById('v-ob').innerText = "0";
+        setGIR(false); document.getElementById('v-putts').innerText = "2"; document.getElementById('v-pen').innerText = "0"; document.getElementById('v-bnk').innerText = "0"; document.getElementById('v-hzd').innerText = "0"; document.getElementById('v-ob').innerText = "0";
         changeScreen('screen-score');
     }
 
@@ -372,7 +434,6 @@
     }
 
     function save() { localStorage.setItem(DB_NAME, JSON.stringify(rounds)); }
-
     function renderMarks(containerId, currentOnly, filterPalo = "all") {
         let cont = document.getElementById(containerId); if(!cont) return;
         cont.innerHTML = "";
@@ -385,29 +446,17 @@
             let l = document.createElement('span'); l.className = 'dot-label'; l.innerText = g.p + "-H" + g.h; d.appendChild(l); cont.appendChild(d);
         });
     }
-
     function saveHoleData() {
         let r = rounds.find(x => x.id === currentId); r.holeStats[currentHoyo] = { score: scoreTemp, gir: girTemp, putts: parseInt(document.getElementById('v-putts').innerText), pen: parseInt(document.getElementById('v-pen').innerText), bnk: parseInt(document.getElementById('v-bnk').innerText), hzd: parseInt(document.getElementById('v-hzd').innerText), ob: parseInt(document.getElementById('v-ob').innerText) };
         save(); changeScreen('step-hole');
     }
-
     function getStatsHTML(r) {
         const cData = COURSES[r.campo];
         let c = { e: 0, bir: 0, par: 0, bog: 0, pbog: 0 };
         Object.keys(r.holeStats).forEach(h => { let s = r.holeStats[h].score, diff = s - cData.pars[h]; if(diff <= -2) c.e++; else if(diff === -1) c.bir++; else if(diff === 0) c.par++; else if(diff === 1) c.bog++; else c.pbog++; });
         return `<div style="color:#d4af37" class="stat-box"><span class="stat-val">${c.e}</span>Aguila</div><div style="color:blue" class="stat-box"><span class="stat-val">${c.bir}</span>Birdie</div><div style="color:green" class="stat-box"><span class="stat-val">${c.par}</span>Par</div><div style="color:orange" class="stat-box"><span class="stat-val">${c.bog}</span>Boggey</div><div style="color:red" class="stat-box"><span class="stat-val">${c.pbog}</span>+Boggey</div>`;
     }
-
-    function toggleSummaryView(v) {
-        document.getElementById('view-map').style.display = v==='map'?'flex':'none';
-        document.getElementById('view-stats').style.display = v==='stats'?'flex':'none';
-        document.getElementById('tab-map').style.background = v==='map'?'var(--primary)':'white';
-        document.getElementById('tab-map').style.color = v==='map'?'white':'black';
-        document.getElementById('tab-stats').style.background = v==='stats'?'var(--primary)':'white';
-        document.getElementById('tab-stats').style.color = v==='stats'?'white':'black';
-        updateSummaryData();
-    }
-
+    function toggleSummaryView(v) { document.getElementById('view-map').style.display = v==='map'?'flex':'none'; document.getElementById('view-stats').style.display = v==='stats'?'flex':'none'; document.getElementById('tab-map').style.background = v==='map'?'var(--primary)':'white'; document.getElementById('tab-map').style.color = v==='map'?'white':'black'; document.getElementById('tab-stats').style.background = v==='stats'?'var(--primary)':'white'; document.getElementById('tab-stats').style.color = v==='stats'?'white':'black'; updateSummaryData(); }
     function updateSummaryData() {
         let r = rounds.find(x => x.id === currentId); if(!r) return;
         const cData = COURSES[r.campo];
@@ -425,11 +474,10 @@
         document.getElementById('summary-stats-bar-bottom').innerHTML = `<div style="color:var(--gir)" class="stat-box"><span class="stat-val">${totals.gir}</span>GIR</div><div style="color:red" class="stat-box"><span class="stat-val">${totals.pen}</span>Penalidades</div><div style="color:#795548" class="stat-box"><span class="stat-val">${totals.bnk}</span>Bunker</div><div style="color:#0288d1" class="stat-box"><span class="stat-val">${totals.hzd}</span>Hazard</div><div style="color:#d32f2f" class="stat-box"><span class="stat-val">${totals.ob}</span>Fuera Cancha</div>`;
         renderMarks('summary-marks-container', false, document.getElementById('summary-filter').value);
     }
-
     function showHistory() {
         rounds = JSON.parse(localStorage.getItem(DB_NAME)) || [];
         let list = document.getElementById('history-list'); list.innerHTML = "";
-        if(rounds.length === 0) { list.innerHTML = "<p style='margin-top:20px;'>No hay rondas guardadas.</p>"; }
+        if(rounds.length === 0) list.innerHTML = "<p style='margin-top:20px;'>No hay rondas guardadas.</p>";
         else {
             [...rounds].reverse().forEach(r => {
                 let wrap = document.createElement('div'); wrap.className = "history-item";
@@ -442,7 +490,6 @@
         }
         changeScreen('screen-history');
     }
-
     function exportAsJPG() {
         const r = rounds.find(x => x.id === currentId); if(!r) return;
         const area = document.getElementById('capture-area'); let sc = calculateLiveScores(r); let totalPar = getCourseTotalPar(r.campo);
@@ -461,14 +508,12 @@
             link.click(); document.body.removeChild(link); alert("Imagen guardada");
         });
     }
-
     function setGIR(v) { girTemp = v; document.getElementById('gir-si').style.background = v ? 'var(--gir)' : 'white'; document.getElementById('gir-si').style.color = v ? 'white' : 'var(--gir)'; document.getElementById('gir-no').style.background = !v ? 'var(--gir)' : 'white'; document.getElementById('gir-no').style.color = !v ? 'white' : 'var(--gir)'; }
     function updateVal(id, delta, min = 0) { let el = document.getElementById(id); el.innerText = Math.max(min, (parseInt(el.innerText) || 0) + delta); }
     function adjustScore(v) { scoreTemp = Math.max(1, scoreTemp + v); document.getElementById('score-val-display').innerText = scoreTemp; }
     function closeClubs() { document.getElementById('club-selector-overlay').style.display = 'none'; }
     function jumpToHole(num) { currentHoyo = parseInt(num); updateMapScreen(); }
     function confirmExit() { if(confirm("Deseas salir al menu principal?")) { changeScreen('screen-menu'); } }
-    function confirmShot(palo) { let r = rounds.find(x => x.id === currentId); r.golpes.push({ h: currentHoyo, p: palo, x: tempCoords.x, y: tempCoords.y }); save(); closeClubs(); updateMapScreen(); }
     function undoShot() { let r = rounds.find(x => x.id === currentId); if(r && r.golpes.length > 0) { r.golpes.pop(); save(); updateMapScreen(); } }
 
 </script>
