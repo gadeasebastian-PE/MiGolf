@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Mi Golf v9.9</title>
+    <title>Mi Golf v10.8</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root { --primary: #1b5e20; --bg: #f0f4f0; --white: #ffffff; --accent: #ff9800; --text: #333; --gir: #673ab7; }
@@ -32,6 +32,7 @@
         .btn-menu-small { background: #444 !important; color: white !important; border: none !important; }
         .btn-danger { background: #f44336 !important; color: white !important; border: none !important; padding: 5px 10px !important; font-size: 0.6rem !important; min-width: 50px !important; }
 
+        .btn-completed { background-color: #c8e6c9 !important; border-color: #81c784 !important; color: #1b5e20 !important; }
         .btn-gir { border: 2px solid var(--gir); color: var(--gir); flex: 1; min-width: 0; padding: 12px 0; }
         .btn-gir.selected { background: var(--gir) !important; color: white !important; }
 
@@ -48,19 +49,37 @@
             font-weight: bold; font-size: 0.85rem; flex-shrink: 0;
         }
 
-        .map-header { width: 100%; background: #fff; border-bottom: 1px solid #ccc; padding: 8px 15px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
-        .map-header h2 { margin: 0; font-size: 1.3rem; color: var(--primary); }
-        .live-scores { font-size: 0.75rem; font-weight: bold; text-align: right; }
+        .map-header { width: 100%; background: #fff; border-bottom: 1px solid #ccc; padding: 8px 15px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+        .map-header h2 { margin: 0; font-size: 1.1rem; color: var(--primary); text-align: center; width: 100%; }
+        .live-scores-map { font-size: 0.75rem; font-weight: bold; color: #666; margin-top: 2px; }
 
-        .map-wrapper { flex: 1; position: relative; background: #ddd; overflow: hidden; width: 100%; display: flex; align-items: center; justify-content: center; touch-action: none; }
-        .map-wrapper img { width: 100%; height: 100%; object-fit: fill; pointer-events: none; }
+        .map-wrapper {
+            flex: 1; position: relative; background: #ddd;
+            display: flex; align-items: center; justify-content: center;
+            width: 100%; overflow: hidden; touch-action: none;
+        }
+        .map-container-inner {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            max-width: 100%;
+            max-height: 100%;
+        }
+        .map-container-inner img {
+            display: block;
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+        }
 
-        #touch-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 999; cursor: pointer; background: rgba(255,255,255,0.01); }
+        #touch-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 999; cursor: pointer; }
         #marks-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 500; }
-        .dot { position: absolute; width: 14px; height: 14px; border: 1.5px solid white; border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 3px rgba(0,0,0,0.5); }
+        .dot { position: absolute; width: 12px; height: 12px; border: 1.5px solid white; border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 3px rgba(0,0,0,0.5); }
         .dot-label { position: absolute; font-size: 8px; color: white; background: rgba(0,0,0,0.8); padding: 1px 3px; border-radius: 2px; transform: translate(8px, -8px); white-space: nowrap; }
 
-        .info-bar { height: 35px; background: white; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-size: 0.65rem; font-weight: bold; flex-shrink: 0; width: 100%; box-sizing: border-box; }
+        .info-bar-minimal { height: 10px; width: 100%; background: var(--bg); flex-shrink: 0; }
 
         .footer-btns { display: flex; flex-direction: column; gap: 8px; padding: 10px; background: var(--bg); flex-shrink: 0; width: 100%; box-sizing: border-box; }
         .footer-row-1 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
@@ -88,6 +107,9 @@
 
         #capture-area { position: absolute; left: -5000px; width: 1000px; background: white; padding: 20px; }
         .summary-view { flex-direction: column; flex: 1; overflow: hidden; width: 100%; }
+
+        /* FOOTER CREDITS CON FORMATO SOLICITADO */
+        .footer-credits { margin-top: auto; padding-bottom: 15px; font-size: 0.65rem; color: #777; text-align: center; width: 100%; line-height: 1.4; }
     </style>
 </head>
 <body>
@@ -95,19 +117,23 @@
 <header id="main-header">MI GOLF</header>
 
 <div class="container">
-    <div id="screen-menu" class="screen active" style="justify-content: center;">
-        <h2 style="margin-bottom: 25px;">MENU PRINCIPAL</h2>
-        <button class="btn-large" onclick="changeScreen('screen-init-hcap')">NUEVA RONDA</button>
-        <button class="btn-sec" style="min-width: 200px;" onclick="showHistory()">HISTORIAL</button>
+    <div id="screen-menu" class="screen active">
+        <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%;">
+            <h2 style="margin-bottom: 25px;">MENU PRINCIPAL</h2>
+            <button class="btn-large" onclick="changeScreen('screen-init-hcap')">NUEVA RONDA</button>
+            <button class="btn-sec" style="min-width: 200px;" onclick="showHistory()">HISTORIAL</button>
+        </div>
+        <div class="footer-credits">
+            Versi&oacute;n desarrollada para Iphone<br>
+            Desarrollador: Sebasti&aacute;n Gadea - Colaborador: Tom&aacute;s Ramos
+        </div>
     </div>
 
     <div id="screen-init-hcap" class="screen" style="justify-content: center;">
         <h3 style="margin-bottom:5px">Seleccion de Campo</h3>
         <select id="course-select" style="padding:12px; width:85%; border-radius:8px; border:1px solid #ccc; margin-bottom:20px; font-size: 0.9rem;"></select>
-
         <h3 style="margin-bottom:5px">Handicap de Juego</h3>
         <input type="number" id="hcap-value" style="font-size:2.5rem; width:100px; text-align:center; border:2px solid var(--accent); border-radius:10px; margin-bottom: 20px;" placeholder="0">
-
         <button class="btn-large" onclick="startNewRound()">COMENZAR</button>
         <button class="btn-sec" style="margin-top:10px;" onclick="changeScreen('screen-menu')">SALIR AL MENU</button>
     </div>
@@ -117,6 +143,7 @@
             <span>PAR: 0</span><span>GROSS: 0</span><span>NETO: 0</span>
         </div>
         <div id="global-stats" class="stats-bar"></div>
+        <h3 style="margin: 10px 0 0 0; color: var(--primary); font-size: 1rem;">Selecciona el hoyo</h3>
         <div class="grid-3-cols" id="hole-btns"></div>
         <div style="padding:15px; display: flex; flex-direction: column; gap: 8px; width: 100%; align-items: center; background: white; border-top: 1px solid #ddd;">
             <button class="btn-accent" style="width: 100%; height: 50px;" onclick="changeScreen('screen-summary')">TARJETA/MAPA</button>
@@ -127,17 +154,15 @@
     <div id="step-map" class="screen">
         <div class="map-header">
             <h2 id="current-hole-title">HOYO -</h2>
-            <div class="live-scores" id="map-live-scores">P: 0 | G: 0 | N: 0</div>
+            <div class="live-scores-map" id="map-live-scores">P: 0 | G: 0 | N: 0</div>
         </div>
-        <div class="info-bar">
-            <span>H: <select id="hoyo-quick-select" onchange="jumpToHole(this.value)"></select></span>
-            <span>Palo: <select id="hoyo-club-filter" onchange="updateMapScreen()"></select></span>
-            <span id="par-info"></span>
-        </div>
+        <div class="info-bar-minimal"></div>
         <div class="map-wrapper">
-            <img src="mapa.jpg" alt="Mapa">
-            <div id="touch-overlay" onclick="handleMapClick(event)"></div>
-            <div id="marks-container"></div>
+            <div class="map-container-inner" id="map-inner-game">
+                <img src="mapa.jpg" alt="Mapa" id="main-map-img">
+                <div id="touch-overlay" onclick="handleMapClick(event)"></div>
+                <div id="marks-container"></div>
+            </div>
         </div>
         <div class="footer-btns">
             <div class="footer-row-1">
@@ -183,15 +208,20 @@
             <button id="tab-map" onclick="toggleSummaryView('map')" style="flex:1; background:white; color:black;">MAPA</button>
             <button class="btn-jpg" onclick="exportAsJPG()">JPG</button>
         </div>
-        <div id="view-stats" class="summary-view" style="display:flex;">
+        <div id="view-stats" class="screen" style="display:flex; width: 100%;">
             <div id="summary-stats-bar-top" class="stats-bar" style="align-self: center;"></div>
             <div class="table-container"><table id="source-table"><thead><tr><th>H</th><th>Idx</th><th>Par</th><th>Gross</th><th>Neto</th><th>GIR</th><th>Put</th><th>Pen</th><th>Bker</th><th>Hzrd</th><th>Fuera</th></tr></thead><tbody id="scorecard-body"></tbody></table></div>
             <div id="net-results" style="background:white; padding:6px; border-top:1px solid #ddd; font-size:0.9rem; text-align:center; font-weight:bold; flex-shrink:0;"></div>
             <div id="summary-stats-bar-bottom" class="stats-bar" style="grid-template-columns: repeat(5, 1fr); align-self: center;"></div>
         </div>
-        <div id="view-map" class="summary-view" style="display:none;">
+        <div id="view-map" class="screen" style="display:none; width: 100%;">
             <div style="padding:4px; width: 100%; display: flex; justify-content: center;"><select id="summary-filter" onchange="renderMarks('summary-marks-container', false, this.value)" style="width:90%; padding:8px;"></select></div>
-            <div class="map-wrapper" style="background:white;"><img src="mapa.jpg" style="object-fit: contain;"><div id="summary-marks-container"></div></div>
+            <div class="map-wrapper" style="background:white;">
+                <div class="map-container-inner">
+                    <img src="mapa.jpg">
+                    <div id="summary-marks-container"></div>
+                </div>
+            </div>
         </div>
         <div style="padding:10px; flex-shrink:0; display: flex; flex-direction: column; align-items: center; width: 100%; background: white; border-top: 1px solid #ddd; gap:5px;">
             <button class="btn-sec" onclick="changeScreen('step-hole')" style="width: 90%;">VOLVER A SELECCION HOYOS</button>
@@ -202,7 +232,7 @@
     <div id="screen-history" class="screen">
         <h3 style="margin-top: 20px;">HISTORIAL DE RONDAS</h3>
         <div id="history-list" style="overflow-y: auto; flex: 1; width: 100%; display: flex; flex-direction: column; align-items: center; padding-bottom: 20px;"></div>
-        <div style="padding:20px; width: 100%; display: center; background: white; border-top: 1px solid #ddd;">
+        <div style="padding:20px; width: 100%; display: flex; justify-content: center; background: white; border-top: 1px solid #ddd;">
             <button class="btn-sec" style="width: 200px;" onclick="changeScreen('screen-menu')">VOLVER AL MENU</button>
         </div>
     </div>
@@ -226,18 +256,23 @@
             hcp: { 1:1, 2:13, 3:17, 4:11, 5:7, 6:9, 7:15, 8:3, 9:5, 10:18, 11:10, 12:14, 13:12, 14:6, 15:2, 16:16, 17:8, 18:4 }
         }
     };
-    const CLUBS = ["D", "M", "H3", "H4", "5", "6", "7", "8", "9", "P", "52", "56", "60"];
+    const CLUBS = ["D", "M3", "M5", "H3", "H4", "4", "5", "6", "7", "8", "9", "P", "52", "56", "60"];
     const DB_NAME = 'golf_stable_data';
-
     let rounds = JSON.parse(localStorage.getItem(DB_NAME)) || [];
     let currentId = null, currentHoyo = 1, tempCoords = null, girTemp = false, scoreTemp = 0;
 
-    function getClubColor(p) { if(p==='D') return 'red'; if(['M','H3','H4'].includes(p)) return 'yellow'; if(['5','6','7','8','9','P'].includes(p)) return 'black'; if(['52','56','60'].includes(p)) return 'violet'; return 'red'; }
+    function getClubColor(p) {
+        if(p==='D') return 'red';
+        if(['M3','M5'].includes(p)) return 'blue';
+        if(['H3','H4'].includes(p)) return 'yellow';
+        if(['4','5','6','7','8','9','P'].includes(p)) return 'black';
+        if(['52','56','60'].includes(p)) return 'violet';
+        return 'red';
+    }
 
     function getCourseTotalPar(courseName) {
         const c = COURSES[courseName];
-        if(!c) return 72;
-        return Object.values(c.pars).reduce((a, b) => a + b, 0);
+        return c ? Object.values(c.pars).reduce((a, b) => a + b, 0) : 72;
     }
 
     function initApp() {
@@ -249,36 +284,31 @@
             let opt = document.createElement('option'); opt.value = name; opt.innerText = name; cSel.appendChild(opt);
         });
         const hGrid = document.getElementById('hole-btns');
-        const qSelect = document.getElementById('hoyo-quick-select');
-        hGrid.innerHTML = ''; qSelect.innerHTML = '';
+        hGrid.innerHTML = '';
         for(let i=1; i<=18; i++) {
-            let b = document.createElement('button'); b.innerText = i; b.onclick = () => { currentHoyo = i; changeScreen('step-map'); }; hGrid.appendChild(b);
-            let opt = document.createElement('option'); opt.value = i; opt.innerText = i; qSelect.appendChild(opt);
+            let b = document.createElement('button'); b.id = `btn-hoyo-${i}`; b.innerText = i; b.onclick = () => { currentHoyo = i; changeScreen('step-map'); }; hGrid.appendChild(b);
         }
         const cGrid = document.getElementById('club-btns');
         cGrid.innerHTML = '';
         CLUBS.forEach(p => { let b = document.createElement('button'); b.innerText = p; b.onclick = () => confirmShot(p); cGrid.appendChild(b); });
-        ['hoyo-club-filter', 'summary-filter'].forEach(id => {
-            const sel = document.getElementById(id); if(!sel) return;
-            sel.innerHTML = '<option value="all">Todos los Palos</option>';
-            CLUBS.forEach(c => { let opt = document.createElement('option'); opt.value = c; opt.innerText = c; sel.appendChild(opt); });
-        });
+        const sumFilter = document.getElementById('summary-filter');
+        sumFilter.innerHTML = '<option value="all">Todos los Palos</option>';
+        CLUBS.forEach(c => { let opt = document.createElement('option'); opt.value = c; opt.innerText = c; sumFilter.appendChild(opt); });
     }
     initApp();
 
-    function handleMapClick(e) { let rect = e.currentTarget.getBoundingClientRect(); let clientX = e.clientX || (e.touches && e.touches[0].clientX); let clientY = e.clientY || (e.touches && e.touches[0].clientY); tempCoords = { x: (((clientX - rect.left) / rect.width) * 100).toFixed(2), y: (((clientY - rect.top) / rect.height) * 100).toFixed(2) }; document.getElementById('club-selector-overlay').style.display = 'flex'; }
-    function setGIR(v) { girTemp = v; document.getElementById('gir-si').classList.toggle('selected', v===true); document.getElementById('gir-no').classList.toggle('selected', v===false); }
-    function updateVal(id, delta, min = 0) { let el = document.getElementById(id); el.innerText = Math.max(min, (parseInt(el.innerText) || 0) + delta); }
-    function adjustScore(v) { scoreTemp = Math.max(1, scoreTemp + v); document.getElementById('score-val-display').innerText = scoreTemp; }
-    function closeClubs() { document.getElementById('club-selector-overlay').style.display = 'none'; }
-    function jumpToHole(num) { currentHoyo = parseInt(num); updateMapScreen(); }
-    function confirmExit() { if(confirm("Deseas salir al menu principal?")) { changeScreen('screen-menu'); } }
-    function confirmShot(palo) { let r = rounds.find(x => x.id === currentId); r.golpes.push({ h: currentHoyo, p: palo, x: tempCoords.x, y: tempCoords.y }); save(); closeClubs(); updateMapScreen(); }
-    function undoShot() { let r = rounds.find(x => x.id === currentId); if(r && r.golpes.length > 0) { r.golpes.pop(); save(); updateMapScreen(); } }
+    function handleMapClick(e) {
+        const rect = e.currentTarget.getBoundingClientRect();
+        tempCoords = {
+            x: (((e.clientX - rect.left) / rect.width) * 100).toFixed(2),
+            y: (((e.clientY - rect.top) / rect.height) * 100).toFixed(2)
+        };
+        document.getElementById('club-selector-overlay').style.display = 'flex';
+    }
 
     function changeScreen(id) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
+        document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
+        document.getElementById(id).style.display = 'flex';
         const headerEl = document.getElementById('main-header');
         if(id === 'screen-menu') { headerEl.innerText = "MI GOLF"; return; }
         if(!currentId) return;
@@ -300,16 +330,19 @@
         let sc = calculateLiveScores(r); let totalPar = getCourseTotalPar(r.campo);
         document.getElementById('hole-screen-summary-vals').innerHTML = `<span>PAR: ${totalPar}</span><span>GROSS: ${sc.g}</span><span>NETO: ${sc.n > 0 ? '+' : ''}${sc.n}</span>`;
         document.getElementById('global-stats').innerHTML = getStatsHTML(r);
+        for(let i=1; i<=18; i++) {
+            const btn = document.getElementById(`btn-hoyo-${i}`);
+            if(r.holeStats[i] && r.holeStats[i].score > 0) btn.classList.add('btn-completed');
+            else btn.classList.remove('btn-completed');
+        }
     }
 
     function updateMapScreen() {
         const r = rounds.find(x => x.id === currentId); if(!r) return;
         let sc = calculateLiveScores(r); const c = COURSES[r.campo]; let totalPar = getCourseTotalPar(r.campo);
-        document.getElementById('current-hole-title').innerText = "HOYO " + currentHoyo;
+        document.getElementById('current-hole-title').innerText = `HOYO ${currentHoyo} (Par ${c.pars[currentHoyo]} - Hcp ${c.hcp[currentHoyo]})`;
         document.getElementById('map-live-scores').innerText = `P: ${totalPar} | G: ${sc.g} | N: ${sc.n > 0 ? '+' : ''}${sc.n}`;
-        document.getElementById('hoyo-quick-select').value = currentHoyo;
-        document.getElementById('par-info').innerText = "Idx " + c.hcp[currentHoyo] + " | P" + c.pars[currentHoyo];
-        renderMarks('marks-container', true, document.getElementById('hoyo-club-filter').value);
+        renderMarks('marks-container', true, "all");
     }
 
     function startNewRound() {
@@ -330,7 +363,8 @@
         let list = r.golpes; if(currentOnly) list = list.filter(g => g.h === currentHoyo);
         if(filterPalo !== "all") list = list.filter(g => g.p === filterPalo);
         list.forEach(g => {
-            let d = document.createElement('div'); d.className = 'dot'; d.style.left = g.x + "%"; d.style.top = g.y + "%"; d.style.backgroundColor = getClubColor(g.p);
+            let d = document.createElement('div'); d.className = 'dot'; d.style.left = g.x + "%"; d.style.top = g.y + "%";
+            d.style.backgroundColor = getClubColor(g.p);
             let l = document.createElement('span'); l.className = 'dot-label'; l.innerText = g.p + "-H" + g.h; d.appendChild(l); cont.appendChild(d);
         });
     }
@@ -405,7 +439,7 @@
         let html = `<h1 style="text-align:center; font-family:sans-serif; margin-bottom:10px;">${r.nombre} - ${r.campo}</h1>`;
         html += `<p style="text-align:center; margin-bottom:15px; font-weight:bold; font-family:sans-serif;">Hcp ${r.handicap} | PAR: ${totalPar} | GROSS: ${sc.g} | NETO: ${sc.n > 0 ? '+' : ''}${sc.n}</p>`;
         html += `<table style="width:100%; border-collapse:collapse; margin-bottom:20px; border:1px solid #000;">${document.getElementById('source-table').innerHTML}</table>`;
-        html += `<div style="position:relative; width:75%; margin: 0 auto; height:600px; border:1px solid #000;"><img src="mapa.jpg" style="width:100%; height:100%; object-fit:contain;">`;
+        html += `<div style="position:relative; width:75%; margin: 0 auto; border:1px solid #000;"><img src="mapa.jpg" style="width:100%; height:auto; display:block">`;
         r.golpes.forEach(g => {
             html += `<div style="position:absolute; width:12px; height:12px; border:1.5px solid white; border-radius:50%; left:${g.x}%; top:${g.y}%; background-color:${getClubColor(g.p)}; transform:translate(-50%,-50%);"></div>`;
             html += `<span style="position:absolute; font-size:9px; color:#000; font-weight:bold; left:${g.x}%; top:${g.y}%; transform:translate(8px,-8px); background:rgba(255,255,255,0.7); padding:1px;">${g.p}-H${g.h}</span>`;
@@ -417,6 +451,15 @@
             link.click(); document.body.removeChild(link); alert("Imagen guardada");
         });
     }
+
+    function adjustScore(v) { scoreTemp = Math.max(1, scoreTemp + v); document.getElementById('score-val-display').innerText = scoreTemp; }
+    function updateVal(id, delta, min = 0) { let el = document.getElementById(id); el.innerText = Math.max(min, (parseInt(el.innerText) || 0) + delta); }
+    function closeClubs() { document.getElementById('club-selector-overlay').style.display = 'none'; }
+    function jumpToHole(num) { currentHoyo = parseInt(num); updateMapScreen(); }
+    function confirmExit() { if(confirm("Deseas salir al menu principal?")) { changeScreen('screen-menu'); } }
+    function confirmShot(palo) { let r = rounds.find(x => x.id === currentId); r.golpes.push({ h: currentHoyo, p: palo, x: tempCoords.x, y: tempCoords.y }); save(); closeClubs(); updateMapScreen(); }
+    function undoShot() { let r = rounds.find(x => x.id === currentId); if(r && r.golpes.length > 0) { r.golpes.pop(); save(); updateMapScreen(); } }
+
 </script>
 </body>
 </html>
