@@ -3,26 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Mi Golf v9.3</title>
+    <title>Mi Golf v9.9</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root { --primary: #1b5e20; --bg: #f0f4f0; --white: #ffffff; --accent: #ff9800; --text: #333; --gir: #673ab7; }
-        
-        html, body { 
+
+        html, body {
             height: 100dvh; width: 100vw; margin: 0; padding: 0;
             overflow: hidden; font-family: -apple-system, system-ui, sans-serif; background: var(--bg);
             touch-action: manipulation; -webkit-user-select: none; user-select: none;
             color: var(--text);
         }
 
-        header { background: var(--primary); color: white; text-align: center; font-weight: bold; height: 30px; line-height: 30px; font-size: 0.9rem; }
+        header { background: var(--primary); color: white; text-align: center; font-weight: bold; height: 30px; line-height: 30px; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 5px; }
         .container { height: calc(100dvh - 30px); display: flex; flex-direction: column; width: 100%; }
         .screen { display: none; flex-direction: column; height: 100%; width: 100%; overflow: hidden; align-items: center; }
         .active { display: flex; }
 
-        /* BOTONES GENERALES */
-        button { 
-            border-radius: 8px; font-weight: bold; border: 1px solid #ccc; background: white; 
+        button {
+            border-radius: 8px; font-weight: bold; border: 1px solid #ccc; background: white;
             -webkit-tap-highlight-color: transparent; font-size: 0.8rem;
             padding: 10px 15px; margin: 0; align-self: center; cursor: pointer;
         }
@@ -31,35 +30,31 @@
         .btn-jpg { background: #d32f2f !important; color: white !important; border: none !important; min-width: 70px !important; padding: 6px !important; font-size: 0.6rem !important; }
         .btn-dark { background: #333 !important; color: white !important; border: 1px solid #000 !important; }
         .btn-menu-small { background: #444 !important; color: white !important; border: none !important; }
-        
+        .btn-danger { background: #f44336 !important; color: white !important; border: none !important; padding: 5px 10px !important; font-size: 0.6rem !important; min-width: 50px !important; }
+
         .btn-gir { border: 2px solid var(--gir); color: var(--gir); flex: 1; min-width: 0; padding: 12px 0; }
         .btn-gir.selected { background: var(--gir) !important; color: white !important; }
 
-        /* GRID HOYOS */
         .grid-3-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 15px; overflow-y: auto; flex-grow: 1; width: 100%; box-sizing: border-box; }
         .grid-3-cols button { min-width: 0; width: 100%; height: 55px; font-size: 1.2rem; }
 
-        /* ESTADISTICAS */
         .stats-bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; padding: 8px 4px; background: #fff; border-radius: 10px; border: 1px solid #ddd; font-size: 0.42rem; text-align: center; flex-shrink: 0; margin: 8px auto; width: 95%; box-sizing: border-box; }
         .stat-box { display: flex; flex-direction: column; align-items: center; }
         .stat-val { font-size: 1rem; font-weight: bold; display: block; line-height: 1; margin-bottom: 2px; }
 
-        /* BARRA GROSS/NETO FORMATO RESTAURADO */
-        .hole-screen-summary { 
-            width: 92%; background: var(--primary); color: white; border-radius: 8px; 
-            display: flex; justify-content: space-around; padding: 12px 0; margin-top: 15px; 
-            font-weight: bold; font-size: 1rem; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        .hole-screen-summary {
+            width: 92%; background: var(--primary); color: white; border-radius: 8px;
+            display: flex; justify-content: space-around; padding: 12px 0; margin-top: 15px;
+            font-weight: bold; font-size: 0.85rem; flex-shrink: 0;
         }
 
-        /* MAPA HEADER */
         .map-header { width: 100%; background: #fff; border-bottom: 1px solid #ccc; padding: 8px 15px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
         .map-header h2 { margin: 0; font-size: 1.3rem; color: var(--primary); }
-        .live-scores { font-size: 0.85rem; font-weight: bold; text-align: right; }
+        .live-scores { font-size: 0.75rem; font-weight: bold; text-align: right; }
 
-        /* MAPA AREA */
         .map-wrapper { flex: 1; position: relative; background: #ddd; overflow: hidden; width: 100%; display: flex; align-items: center; justify-content: center; touch-action: none; }
         .map-wrapper img { width: 100%; height: 100%; object-fit: fill; pointer-events: none; }
-        
+
         #touch-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 999; cursor: pointer; background: rgba(255,255,255,0.01); }
         #marks-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 500; }
         .dot { position: absolute; width: 14px; height: 14px; border: 1.5px solid white; border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 3px rgba(0,0,0,0.5); }
@@ -67,55 +62,60 @@
 
         .info-bar { height: 35px; background: white; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-size: 0.65rem; font-weight: bold; flex-shrink: 0; width: 100%; box-sizing: border-box; }
 
-        /* FOOTER MAPA */
         .footer-btns { display: flex; flex-direction: column; gap: 8px; padding: 10px; background: var(--bg); flex-shrink: 0; width: 100%; box-sizing: border-box; }
         .footer-row-1 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
         .footer-row-2 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; width: 100%; }
         .footer-btns button { width: 100%; min-width: 0; padding: 12px 5px; height: 45px; }
 
-        /* BOTONES RECTANGULARES SCORE */
         .btn-mini { min-width: 42px !important; height: 38px; border-radius: 8px !important; padding: 0 !important; font-size: 1.2rem !important; border: 1px solid #ccc; background: #fcfcfc; }
         .counter-val { font-size: 1.1rem; font-weight: bold; min-width: 25px; text-align: center; }
         .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 95%; margin-top: 5px; }
         .counter-box { background: white; border-radius: 10px; padding: 6px; border: 1px solid #ddd; display: flex; flex-direction: column; align-items: center; }
 
-        /* TABLA SCORECARD */
         .table-container { flex: 1; overflow-y: auto; background: white; width: 100%; }
         table { width: 100%; border-collapse: collapse; font-size: 0.46rem; color: #000; }
         th, td { padding: 4px 1px; border: 1px solid #eee; text-align: center; }
         th { background: #f8f8f8; font-weight: bold; }
+        tr.even-row { background-color: #f0f7f0; }
 
-        /* MODAL PALOS */
         #club-selector-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10000; justify-content: center; align-items: center; }
         .club-modal { background: white; padding: 15px; border-radius: 12px; width: 90%; max-width: 300px; text-align: center; box-sizing: border-box; }
         #club-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; box-sizing: border-box; }
         #club-btns button { min-width: 0 !important; width: 100%; margin: 0; padding: 12px 2px; font-size: 1rem; box-sizing: border-box; }
 
-        /* AREA CAPTURA */
+        .history-item { display: flex; align-items: center; width: 95%; gap: 10px; margin-bottom: 8px; }
+        .history-btn { flex: 1; min-height: 50px; text-align: left; padding-left: 10px; }
+
         #capture-area { position: absolute; left: -5000px; width: 1000px; background: white; padding: 20px; }
+        .summary-view { flex-direction: column; flex: 1; overflow: hidden; width: 100%; }
     </style>
 </head>
 <body>
 
-<header>MI GOLF</header>
+<header id="main-header">MI GOLF</header>
 
 <div class="container">
     <div id="screen-menu" class="screen active" style="justify-content: center;">
         <h2 style="margin-bottom: 25px;">MENU PRINCIPAL</h2>
         <button class="btn-large" onclick="changeScreen('screen-init-hcap')">NUEVA RONDA</button>
         <button class="btn-sec" style="min-width: 200px;" onclick="showHistory()">HISTORIAL</button>
-        <button onclick="clearAllData()" style="margin-top: 40px; font-size: 0.6rem; opacity: 0.4; border:none; min-width: 100px;">RESETEAR APP</button>
     </div>
 
     <div id="screen-init-hcap" class="screen" style="justify-content: center;">
-        <h3>Handicap de Juego</h3>
-        <input type="number" id="hcap-value" style="font-size:2.5rem; width:100px; text-align:center; border:2px solid var(--accent); border-radius:10px; margin-bottom: 20px;" placeholder="0" min="0">
+        <h3 style="margin-bottom:5px">Seleccion de Campo</h3>
+        <select id="course-select" style="padding:12px; width:85%; border-radius:8px; border:1px solid #ccc; margin-bottom:20px; font-size: 0.9rem;"></select>
+
+        <h3 style="margin-bottom:5px">Handicap de Juego</h3>
+        <input type="number" id="hcap-value" style="font-size:2.5rem; width:100px; text-align:center; border:2px solid var(--accent); border-radius:10px; margin-bottom: 20px;" placeholder="0">
+
         <button class="btn-large" onclick="startNewRound()">COMENZAR</button>
         <button class="btn-sec" style="margin-top:10px;" onclick="changeScreen('screen-menu')">SALIR AL MENU</button>
     </div>
 
     <div id="step-hole" class="screen">
-        <div class="hole-screen-summary" id="hole-screen-summary-vals"><span>GROSS: 0</span><span>NETO: 0</span></div>
+        <div class="hole-screen-summary" id="hole-screen-summary-vals">
+            <span>PAR: 0</span><span>GROSS: 0</span><span>NETO: 0</span>
+        </div>
         <div id="global-stats" class="stats-bar"></div>
         <div class="grid-3-cols" id="hole-btns"></div>
         <div style="padding:15px; display: flex; flex-direction: column; gap: 8px; width: 100%; align-items: center; background: white; border-top: 1px solid #ddd;">
@@ -127,7 +127,7 @@
     <div id="step-map" class="screen">
         <div class="map-header">
             <h2 id="current-hole-title">HOYO -</h2>
-            <div class="live-scores" id="map-live-scores">G: 0 | N: 0</div>
+            <div class="live-scores" id="map-live-scores">P: 0 | G: 0 | N: 0</div>
         </div>
         <div class="info-bar">
             <span>H: <select id="hoyo-quick-select" onchange="jumpToHole(this.value)"></select></span>
@@ -180,29 +180,29 @@
     <div id="screen-summary" class="screen">
         <div style="display:flex; gap:4px; padding:5px; flex-shrink:0; width: 100%; box-sizing: border-box;">
             <button id="tab-stats" onclick="toggleSummaryView('stats')" style="flex:1; background:var(--primary); color:white;">TARJETA</button>
-            <button id="tab-map" onclick="toggleSummaryView('map')" style="flex:1;">MAPA</button>
+            <button id="tab-map" onclick="toggleSummaryView('map')" style="flex:1; background:white; color:black;">MAPA</button>
             <button class="btn-jpg" onclick="exportAsJPG()">JPG</button>
         </div>
-        <div id="view-stats" class="summary-view" style="display:flex; flex-direction:column; flex:1; overflow:hidden; width: 100%;">
+        <div id="view-stats" class="summary-view" style="display:flex;">
             <div id="summary-stats-bar-top" class="stats-bar" style="align-self: center;"></div>
             <div class="table-container"><table id="source-table"><thead><tr><th>H</th><th>Idx</th><th>Par</th><th>Gross</th><th>Neto</th><th>GIR</th><th>Put</th><th>Pen</th><th>Bker</th><th>Hzrd</th><th>Fuera</th></tr></thead><tbody id="scorecard-body"></tbody></table></div>
-            <div id="net-results" style="background:white; padding:6px; border-top:1px solid #ddd; font-size:1rem; text-align:center; font-weight:bold; flex-shrink:0;"></div>
+            <div id="net-results" style="background:white; padding:6px; border-top:1px solid #ddd; font-size:0.9rem; text-align:center; font-weight:bold; flex-shrink:0;"></div>
             <div id="summary-stats-bar-bottom" class="stats-bar" style="grid-template-columns: repeat(5, 1fr); align-self: center;"></div>
         </div>
-        <div id="view-map" class="summary-view" style="display:none; flex-direction:column; flex:1; overflow:hidden; width: 100%;">
+        <div id="view-map" class="summary-view" style="display:none;">
             <div style="padding:4px; width: 100%; display: flex; justify-content: center;"><select id="summary-filter" onchange="renderMarks('summary-marks-container', false, this.value)" style="width:90%; padding:8px;"></select></div>
             <div class="map-wrapper" style="background:white;"><img src="mapa.jpg" style="object-fit: contain;"><div id="summary-marks-container"></div></div>
         </div>
         <div style="padding:10px; flex-shrink:0; display: flex; flex-direction: column; align-items: center; width: 100%; background: white; border-top: 1px solid #ddd; gap:5px;">
-            <button class="btn-sec" style="width: 90%;" onclick="changeScreen('step-hole')">VOLVER A SELECCION HOYOS</button>
-            <button class="btn-menu-small" onclick="confirmExit()">MENU PRINCIPAL</button>
+            <button class="btn-sec" onclick="changeScreen('step-hole')" style="width: 90%;">VOLVER A SELECCION HOYOS</button>
+            <button class="btn-menu-small" onclick="confirmExit()" style="width: 70%;">MENU PRINCIPAL</button>
         </div>
     </div>
 
     <div id="screen-history" class="screen">
         <h3 style="margin-top: 20px;">HISTORIAL DE RONDAS</h3>
         <div id="history-list" style="overflow-y: auto; flex: 1; width: 100%; display: flex; flex-direction: column; align-items: center; padding-bottom: 20px;"></div>
-        <div style="padding:20px; width: 100%; display: flex; justify-content: center; background: white; border-top: 1px solid #ddd;">
+        <div style="padding:20px; width: 100%; display: center; background: white; border-top: 1px solid #ddd;">
             <button class="btn-sec" style="width: 200px;" onclick="changeScreen('screen-menu')">VOLVER AL MENU</button>
         </div>
     </div>
@@ -212,22 +212,46 @@
 <div id="capture-area"></div>
 
 <script>
-    const PARS = { 1:4, 2:4, 3:3, 4:5, 5:4, 6:4, 7:3, 8:4, 9:5, 10:4, 11:3, 12:4, 13:3, 14:4, 15:4, 16:4, 17:4, 18:5 };
-    const HOLE_HCP = { 1:15, 2:17, 3:9, 4:11, 5:3, 6:13, 7:1, 8:5, 9:7, 10:2, 11:8, 12:16, 13:14, 14:12, 15:4, 16:18, 17:10, 18:6 };
-    const CLUBS = ["D", "M", "3", "4", "5", "6", "7", "8", "9", "P", "A", "56", "60"];
-    
-    // DB NAME ACTUALIZADO PARA ESTA VERSION
-    const DB_NAME = 'golf_v93_db';
+    const COURSES = {
+        "La Carolina Golf & Country Club": {
+            pars: { 1:4, 2:4, 3:3, 4:5, 5:4, 6:4, 7:3, 8:4, 9:5, 10:4, 11:3, 12:4, 13:3, 14:4, 15:4, 16:4, 17:4, 18:5 },
+            hcp: { 1:15, 2:17, 3:9, 4:11, 5:3, 6:13, 7:1, 8:5, 9:7, 10:2, 11:8, 12:16, 13:14, 14:12, 15:4, 16:18, 17:10, 18:6 }
+        },
+        "Marayui Country Golf - Chapadmalal": {
+            pars: { 1:4, 2:4, 3:4, 4:3, 5:4, 6:4, 7:5, 8:3, 9:5, 10:4, 11:4, 12:4, 13:3, 14:4, 15:4, 16:5, 17:3, 18:5 },
+            hcp: { 1:7, 2:9, 3:11, 4:15, 5:5, 6:13, 7:3, 8:17, 9:1, 10:6, 11:12, 12:10, 13:18, 14:2, 15:14, 16:8, 17:16, 18:4 }
+        },
+        "Miramar Links": {
+            pars: { 1:4, 2:3, 3:4, 4:4, 5:5, 6:5, 7:3, 8:4, 9:4, 10:5, 11:4, 12:3, 13:4, 14:4, 15:5, 16:3, 17:4, 18:4 },
+            hcp: { 1:1, 2:13, 3:17, 4:11, 5:7, 6:9, 7:15, 8:3, 9:5, 10:18, 11:10, 12:14, 13:12, 14:6, 15:2, 16:16, 17:8, 18:4 }
+        }
+    };
+    const CLUBS = ["D", "M", "H3", "H4", "5", "6", "7", "8", "9", "P", "52", "56", "60"];
+    const DB_NAME = 'golf_stable_data';
+
     let rounds = JSON.parse(localStorage.getItem(DB_NAME)) || [];
     let currentId = null, currentHoyo = 1, tempCoords = null, girTemp = false, scoreTemp = 0;
 
-    function getClubColor(p) { if(p==='D') return 'red'; if(['M','3','4'].includes(p)) return 'yellow'; if(['5','6','7','8','9','P'].includes(p)) return 'black'; if(['A','56','60'].includes(p)) return 'violet'; return 'red'; }
+    function getClubColor(p) { if(p==='D') return 'red'; if(['M','H3','H4'].includes(p)) return 'yellow'; if(['5','6','7','8','9','P'].includes(p)) return 'black'; if(['52','56','60'].includes(p)) return 'violet'; return 'red'; }
+
+    function getCourseTotalPar(courseName) {
+        const c = COURSES[courseName];
+        if(!c) return 72;
+        return Object.values(c.pars).reduce((a, b) => a + b, 0);
+    }
 
     function initApp() {
+        const lastHcp = localStorage.getItem('last_hcap_used') || "0";
+        document.getElementById('hcap-value').value = lastHcp;
+        const cSel = document.getElementById('course-select');
+        cSel.innerHTML = '';
+        Object.keys(COURSES).forEach(name => {
+            let opt = document.createElement('option'); opt.value = name; opt.innerText = name; cSel.appendChild(opt);
+        });
         const hGrid = document.getElementById('hole-btns');
         const qSelect = document.getElementById('hoyo-quick-select');
         hGrid.innerHTML = ''; qSelect.innerHTML = '';
-        for(let i=1; i<=18; i++) { 
+        for(let i=1; i<=18; i++) {
             let b = document.createElement('button'); b.innerText = i; b.onclick = () => { currentHoyo = i; changeScreen('step-map'); }; hGrid.appendChild(b);
             let opt = document.createElement('option'); opt.value = i; opt.innerText = i; qSelect.appendChild(opt);
         }
@@ -255,40 +279,46 @@
     function changeScreen(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
+        const headerEl = document.getElementById('main-header');
+        if(id === 'screen-menu') { headerEl.innerText = "MI GOLF"; return; }
         if(!currentId) return;
         const r = rounds.find(x => x.id === currentId);
+        if(!r) return;
+        headerEl.innerText = "MI GOLF - " + r.campo;
         if(id === 'step-hole') updateHoleScreenStats(r);
         if(id === 'step-map') updateMapScreen();
-        if(id === 'screen-summary') { toggleSummaryView('stats'); updateSummaryData(); }
+        if(id === 'screen-summary') { toggleSummaryView('stats'); }
     }
 
     function calculateLiveScores(r) {
-        let g = 0, n = 0;
-        for(let i=1; i<=18; i++) { let s = r.holeStats[i]?.score; if(s) { g += s; n += (s - PARS[i] - (r.handicap >= HOLE_HCP[i] ? 1 : 0)); } }
+        let g = 0, n = 0; const c = COURSES[r.campo];
+        for(let i=1; i<=18; i++) { let s = r.holeStats[i]?.score; if(s) { g += s; n += (s - c.pars[i] - (r.handicap >= c.hcp[i] ? 1 : 0)); } }
         return { g, n };
     }
 
     function updateHoleScreenStats(r) {
-        let sc = calculateLiveScores(r);
-        document.getElementById('hole-screen-summary-vals').innerHTML = `<span>GROSS: ${sc.g}</span><span>NETO: ${sc.n > 0 ? '+' : ''}${sc.n}</span>`;
+        let sc = calculateLiveScores(r); let totalPar = getCourseTotalPar(r.campo);
+        document.getElementById('hole-screen-summary-vals').innerHTML = `<span>PAR: ${totalPar}</span><span>GROSS: ${sc.g}</span><span>NETO: ${sc.n > 0 ? '+' : ''}${sc.n}</span>`;
         document.getElementById('global-stats').innerHTML = getStatsHTML(r);
     }
 
     function updateMapScreen() {
         const r = rounds.find(x => x.id === currentId); if(!r) return;
-        let sc = calculateLiveScores(r);
+        let sc = calculateLiveScores(r); const c = COURSES[r.campo]; let totalPar = getCourseTotalPar(r.campo);
         document.getElementById('current-hole-title').innerText = "HOYO " + currentHoyo;
-        document.getElementById('map-live-scores').innerText = `G: ${sc.g} | N: ${sc.n > 0 ? '+' : ''}${sc.n}`;
+        document.getElementById('map-live-scores').innerText = `P: ${totalPar} | G: ${sc.g} | N: ${sc.n > 0 ? '+' : ''}${sc.n}`;
         document.getElementById('hoyo-quick-select').value = currentHoyo;
-        document.getElementById('par-info').innerText = "Idx " + HOLE_HCP[currentHoyo] + " | P" + PARS[currentHoyo];
+        document.getElementById('par-info').innerText = "Idx " + c.hcp[currentHoyo] + " | P" + c.pars[currentHoyo];
         renderMarks('marks-container', true, document.getElementById('hoyo-club-filter').value);
     }
 
     function startNewRound() {
         const hVal = Math.max(0, parseInt(document.getElementById('hcap-value').value) || 0);
+        const cName = document.getElementById('course-select').value;
+        localStorage.setItem('last_hcap_used', hVal);
         currentId = Date.now();
-        rounds.push({ id: currentId, nombre: new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), handicap: hVal, golpes: [], holeStats: {} });
-        save(); document.getElementById('hcap-value').value = ""; changeScreen('step-hole');
+        rounds.push({ id: currentId, nombre: new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), handicap: hVal, campo: cName, golpes: [], holeStats: {} });
+        save(); changeScreen('step-hole');
     }
 
     function save() { localStorage.setItem(DB_NAME, JSON.stringify(rounds)); }
@@ -297,12 +327,10 @@
         let cont = document.getElementById(containerId); if(!cont) return;
         cont.innerHTML = "";
         let r = rounds.find(x => x.id === currentId); if(!r) return;
-        let list = r.golpes; 
-        if(currentOnly) list = list.filter(g => g.h === currentHoyo);
+        let list = r.golpes; if(currentOnly) list = list.filter(g => g.h === currentHoyo);
         if(filterPalo !== "all") list = list.filter(g => g.p === filterPalo);
         list.forEach(g => {
-            let d = document.createElement('div'); d.className = 'dot'; d.style.left = g.x + "%"; d.style.top = g.y + "%";
-            d.style.backgroundColor = getClubColor(g.p);
+            let d = document.createElement('div'); d.className = 'dot'; d.style.left = g.x + "%"; d.style.top = g.y + "%"; d.style.backgroundColor = getClubColor(g.p);
             let l = document.createElement('span'); l.className = 'dot-label'; l.innerText = g.p + "-H" + g.h; d.appendChild(l); cont.appendChild(d);
         });
     }
@@ -320,80 +348,73 @@
     }
 
     function getStatsHTML(r) {
+        const cData = COURSES[r.campo];
         let c = { e: 0, bir: 0, par: 0, bog: 0, pbog: 0 };
-        Object.keys(r.holeStats).forEach(h => { let s = r.holeStats[h].score, diff = s - PARS[h]; if(diff <= -2) c.e++; else if(diff === -1) c.bir++; else if(diff === 0) c.par++; else if(diff === 1) c.bog++; else c.pbog++; });
+        Object.keys(r.holeStats).forEach(h => { let s = r.holeStats[h].score, diff = s - cData.pars[h]; if(diff <= -2) c.e++; else if(diff === -1) c.bir++; else if(diff === 0) c.par++; else if(diff === 1) c.bog++; else c.pbog++; });
         return `<div style="color:#d4af37" class="stat-box"><span class="stat-val">${c.e}</span>Aguila</div><div style="color:blue" class="stat-box"><span class="stat-val">${c.bir}</span>Birdie</div><div style="color:green" class="stat-box"><span class="stat-val">${c.par}</span>Par</div><div style="color:orange" class="stat-box"><span class="stat-val">${c.bog}</span>Boggey</div><div style="color:red" class="stat-box"><span class="stat-val">${c.pbog}</span>+Boggey</div>`;
     }
 
-    function toggleSummaryView(v) { document.getElementById('view-map').style.display = v==='map'?'flex':'none'; document.getElementById('view-stats').style.display = v==='stats'?'flex':'none'; document.getElementById('tab-map').style.background = v==='map'?'var(--primary)':'white'; document.getElementById('tab-map').style.color = v==='map'?'white':'black'; document.getElementById('tab-stats').style.background = v==='stats'?'var(--primary)':'white'; document.getElementById('tab-stats').style.color = v==='stats'?'white':'black'; }
+    function toggleSummaryView(v) {
+        document.getElementById('view-map').style.display = v==='map'?'flex':'none';
+        document.getElementById('view-stats').style.display = v==='stats'?'flex':'none';
+        document.getElementById('tab-map').style.background = v==='map'?'var(--primary)':'white';
+        document.getElementById('tab-map').style.color = v==='map'?'white':'black';
+        document.getElementById('tab-stats').style.background = v==='stats'?'var(--primary)':'white';
+        document.getElementById('tab-stats').style.color = v==='stats'?'white':'black';
+        updateSummaryData();
+    }
 
     function updateSummaryData() {
         let r = rounds.find(x => x.id === currentId); if(!r) return;
+        const cData = COURSES[r.campo];
         document.getElementById('summary-stats-bar-top').innerHTML = getStatsHTML(r);
         let sBody = document.getElementById('scorecard-body'); sBody.innerHTML = ""; let totals = {g:0, n:0, gir:0, pen:0, bnk:0, hzd:0, ob:0};
         for(let i=1; i<=18; i++) {
-            let h = r.holeStats[i] || {score:0, gir:false, putts:0, pen:0, bnk:0, hzd:0, ob:0}, netH = h.score ? (h.score - PARS[i] - (r.handicap >= HOLE_HCP[i] ? 1 : 0)) : '-';
+            let h = r.holeStats[i] || {score:0, gir:false, putts:0, pen:0, bnk:0, hzd:0, ob:0};
+            let netH = h.score ? (h.score - cData.pars[i] - (r.handicap >= cData.hcp[i] ? 1 : 0)) : '-';
             if(h.score) { totals.g += h.score; totals.n += netH; if(h.gir) totals.gir++; totals.pen += h.pen; totals.bnk += h.bnk; totals.hzd += h.hzd; totals.ob += h.ob; }
-            sBody.innerHTML += `<tr><td>${i}</td><td>${HOLE_HCP[i]}</td><td>${PARS[i]}</td><td><b>${h.score||'-'}</b></td><td style="background:#f0f7f0">${netH>0?'+':''}${netH}</td><td>${h.gir?'G':'-'}</td><td>${h.putts}</td><td>${h.pen}</td><td>${h.bnk}</td><td>${h.hzd}</td><td>${h.ob}</td></tr>`;
+            let rowClass = (i % 2 === 0) ? 'even-row' : '';
+            sBody.innerHTML += `<tr class="${rowClass}"><td>${i}</td><td>${cData.hcp[i]}</td><td>${cData.pars[i]}</td><td><b>${h.score||'-'}</b></td><td>${netH!=='-'?(netH>0?'+':''):''}${netH}</td><td>${h.gir?'G':'-'}</td><td>${h.putts}</td><td>${h.pen}</td><td>${h.bnk}</td><td>${h.hzd}</td><td>${h.ob}</td></tr>`;
         }
-        document.getElementById('net-results').innerHTML = `GROSS: ${totals.g} | NETO: ${totals.n > 0 ? '+' : ''}${totals.n}`;
+        let totalPar = getCourseTotalPar(r.campo);
+        document.getElementById('net-results').innerHTML = `PAR: ${totalPar} | GROSS: ${totals.g} | NETO: ${totals.n > 0 ? '+' : ''}${totals.n}`;
         document.getElementById('summary-stats-bar-bottom').innerHTML = `<div style="color:var(--gir)" class="stat-box"><span class="stat-val">${totals.gir}</span>GIR</div><div style="color:red" class="stat-box"><span class="stat-val">${totals.pen}</span>Penalidades</div><div style="color:#795548" class="stat-box"><span class="stat-val">${totals.bnk}</span>Bunker</div><div style="color:#0288d1" class="stat-box"><span class="stat-val">${totals.hzd}</span>Hazard</div><div style="color:#d32f2f" class="stat-box"><span class="stat-val">${totals.ob}</span>Fuera Cancha</div>`;
         renderMarks('summary-marks-container', false, document.getElementById('summary-filter').value);
     }
 
-    // ARREGLO DEL HISTORIAL: CARGA CORRECTA
     function showHistory() {
-        // Volver a leer localStorage para asegurar datos frescos
         rounds = JSON.parse(localStorage.getItem(DB_NAME)) || [];
         let list = document.getElementById('history-list'); list.innerHTML = "";
-        if(rounds.length === 0) {
-            list.innerHTML = "<p style='margin-top:20px;'>No hay rondas guardadas.</p>";
-        } else {
-            // Creamos una copia al reves para mostrar la mas nueva primero
-            [...rounds].reverse().forEach(r => { 
-                let b = document.createElement('button'); 
-                b.className = "btn-sec"; 
-                b.style.width="90%"; 
-                b.style.minHeight="50px"; 
-                b.style.marginBottom="5px";
-                b.innerText = r.nombre + " (Hcp: " + r.handicap + ")";
-                b.onclick = () => { 
-                    currentId = r.id; 
-                    changeScreen('step-hole'); 
-                }; 
-                list.appendChild(b); 
+        if(rounds.length === 0) { list.innerHTML = "<p style='margin-top:20px;'>No hay rondas guardadas.</p>"; }
+        else {
+            [...rounds].reverse().forEach(r => {
+                let wrap = document.createElement('div'); wrap.className = "history-item";
+                let bOpen = document.createElement('button'); bOpen.className = "btn-sec history-btn"; bOpen.innerText = r.nombre + " - " + r.campo;
+                bOpen.onclick = () => { currentId = r.id; changeScreen('step-hole'); };
+                let bDel = document.createElement('button'); bDel.className = "btn-danger"; bDel.innerText = "Borrar";
+                bDel.onclick = () => { if(confirm("Deseas borrar esta ronda definitivamente?")) { rounds = rounds.filter(x => x.id !== r.id); save(); showHistory(); } };
+                wrap.appendChild(bOpen); wrap.appendChild(bDel); list.appendChild(wrap);
             });
         }
         changeScreen('screen-history');
     }
 
-    function clearAllData() { if(confirm("Borrar todo?")) { localStorage.clear(); location.reload(); } }
-
-    /* EXPORTAR COMO JPG - MODIFICADO ANCHO MAPA */
     function exportAsJPG() {
-        const r = rounds.find(x => x.id === currentId);
-        const area = document.getElementById('capture-area');
-        let html = `<h1 style="text-align:center; font-family:sans-serif;">Ronda: ${r.nombre} (Hcp ${r.handicap})</h1>`;
-        // Tabla igual (ancho completo de la captura)
+        const r = rounds.find(x => x.id === currentId); if(!r) return;
+        const area = document.getElementById('capture-area'); let sc = calculateLiveScores(r); let totalPar = getCourseTotalPar(r.campo);
+        let html = `<h1 style="text-align:center; font-family:sans-serif; margin-bottom:10px;">${r.nombre} - ${r.campo}</h1>`;
+        html += `<p style="text-align:center; margin-bottom:15px; font-weight:bold; font-family:sans-serif;">Hcp ${r.handicap} | PAR: ${totalPar} | GROSS: ${sc.g} | NETO: ${sc.n > 0 ? '+' : ''}${sc.n}</p>`;
         html += `<table style="width:100%; border-collapse:collapse; margin-bottom:20px; border:1px solid #000;">${document.getElementById('source-table').innerHTML}</table>`;
-        // Mapa 25% mas angosto (75% ancho) y centrado automáticamente con margin auto
         html += `<div style="position:relative; width:75%; margin: 0 auto; height:600px; border:1px solid #000;"><img src="mapa.jpg" style="width:100%; height:100%; object-fit:contain;">`;
         r.golpes.forEach(g => {
             html += `<div style="position:absolute; width:12px; height:12px; border:1.5px solid white; border-radius:50%; left:${g.x}%; top:${g.y}%; background-color:${getClubColor(g.p)}; transform:translate(-50%,-50%);"></div>`;
             html += `<span style="position:absolute; font-size:9px; color:#000; font-weight:bold; left:${g.x}%; top:${g.y}%; transform:translate(8px,-8px); background:rgba(255,255,255,0.7); padding:1px;">${g.p}-H${g.h}</span>`;
         });
-        html += `</div>`;
-        area.innerHTML = html;
-
+        html += `</div>`; area.innerHTML = html;
         html2canvas(area, { scale: 2, useCORS: true }).then(canvas => {
-            const imgData = canvas.toDataURL("image/jpeg", 0.9);
-            const link = document.createElement('a');
-            link.download = `Golf_${r.id}.jpg`;
-            link.href = imgData;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            alert("Imagen guardada");
+            const imgData = canvas.toDataURL("image/jpeg", 0.9); const link = document.createElement('a');
+            link.download = `Golf_${r.id}.jpg`; link.href = imgData; document.body.appendChild(link);
+            link.click(); document.body.removeChild(link); alert("Imagen guardada");
         });
     }
 </script>
