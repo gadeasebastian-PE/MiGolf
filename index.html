@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Mi Golf v11.8</title>
+    <title>Mi Golf v11.9</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root { --primary: #1b5e20; --bg: #f0f4f0; --white: #ffffff; --accent: #ff9800; --text: #333; --gir: #673ab7; }
@@ -162,7 +162,7 @@
         <div class="info-bar-minimal"></div>
         <div class="map-wrapper">
             <div class="map-container-inner" id="map-inner-game">
-                <img src="mapa.jpg" alt="Mapa" id="main-map-img">
+                <img src="mapa.jpg" alt="Mapa">
                 <div id="touch-overlay" onclick="handleMapClick(event, 'game')"></div>
                 <div id="marks-container"></div>
             </div>
@@ -283,9 +283,25 @@
         return 'red';
     }
 
-    function getCourseTotalPar(courseName) {
-        const c = COURSES[courseName];
-        return c ? Object.values(c.pars).reduce((a, b) => a + b, 0) : 72;
+    function save() { localStorage.setItem(DB_NAME, JSON.stringify(rounds)); }
+    function saveDriving() { localStorage.setItem(DRIVING_DB, JSON.stringify(drivingShots)); }
+    function closeClubs() { document.getElementById('club-selector-overlay').style.display = 'none'; }
+
+    // FUNCION CORREGIDA DE CONFIRMACION DE GOLPE
+    function confirmShot(palo) {
+        if(currentContext === 'game') {
+            let r = rounds.find(x => x.id === currentId);
+            if(r) {
+                r.golpes.push({ h: currentHoyo, p: palo, x: tempCoords.x, y: tempCoords.y });
+                save();
+                updateMapScreen();
+            }
+        } else {
+            drivingShots.push({ p: palo, x: tempCoords.x, y: tempCoords.y });
+            saveDriving();
+            updateDrivingScreen();
+        }
+        closeClubs();
     }
 
     function initApp() {
@@ -303,7 +319,11 @@
         }
         const cGrid = document.getElementById('club-btns');
         cGrid.innerHTML = '';
-        CLUBS.forEach(p => { let b = document.createElement('button'); b.innerText = p; b.onclick = () => confirmShot(p); cGrid.appendChild(b); });
+        CLUBS.forEach(p => {
+            let b = document.createElement('button'); b.innerText = p;
+            b.onclick = () => confirmShot(p);
+            cGrid.appendChild(b);
+        });
         ['summary-filter', 'driving-club-filter'].forEach(id => {
             const sel = document.getElementById(id);
             if(sel) {
@@ -324,18 +344,6 @@
         document.getElementById('club-selector-overlay').style.display = 'flex';
     }
 
-    function confirmShot(palo) {
-        if(currentContext === 'game') {
-            let r = rounds.find(x => x.id === currentId);
-            r.golpes.push({ h: currentHoyo, p: palo, x: tempCoords.x, y: tempCoords.y });
-            save(); updateMapScreen();
-        } else {
-            drivingShots.push({ p: palo, x: tempCoords.x, y: tempCoords.y });
-            saveDriving(); updateDrivingScreen();
-        }
-        closeClubs();
-    }
-
     function changeScreen(id) {
         document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
         document.getElementById(id).style.display = 'flex';
@@ -352,9 +360,8 @@
     }
 
     function startDriving() { changeScreen('screen-driving'); }
-    function saveDriving() { localStorage.setItem(DRIVING_DB, JSON.stringify(drivingShots)); }
     function undoDrivingShot() { drivingShots.pop(); saveDriving(); updateDrivingScreen(); }
-    function clearDrivingData() { if(confirm("Deseas borrar todos los golpes de driving?")) { drivingShots = []; saveDriving(); updateDrivingScreen(); } }
+    function clearDrivingData() { if(confirm("Deseas borrar todos los golpes?")) { drivingShots = []; saveDriving(); updateDrivingScreen(); } }
 
     function updateDrivingScreen() {
         const cont = document.getElementById('marks-container-driving');
@@ -370,146 +377,39 @@
 
     function exportDrivingAsJPG() {
         const area = document.getElementById('capture-area');
-        const now = new Date();
-        const dateStr = now.toLocaleDateString() + " " + now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const dateStr = new Date().toLocaleString();
         const filter = document.getElementById('driving-club-filter').value;
-        const paloStr = filter === 'all' ? 'Todos los Palos' : `Palo: ${filter}`;
-        let html = `<h1 style="text-align:center; font-family:sans-serif; margin-bottom:5px;">SESION DE PRACTICA</h1>`;
-        html += `<p style="text-align:center; margin-bottom:15px; font-weight:bold; font-family:sans-serif;">${dateStr} | ${paloStr}</p>`;
+        const pStr = filter === 'all' ? 'Todos los Palos' : `Palo: ${filter}`;
+        let html = `<h1 style="text-align:center; font-family:sans-serif;">SESION DE PRACTICA</h1><p style="text-align:center; font-weight:bold;">${dateStr} | ${pStr}</p>`;
         html += `<div style="position:relative; width:75%; margin: 0 auto; border:1px solid #000;"><img src="driving.png" style="width:100%; height:auto; display:block">`;
         drivingShots.forEach(g => {
             if(filter !== 'all' && g.p !== filter) return;
-            html += `<div style="position:absolute; width:12px; height:12px; border:1.5px solid white; border-radius:50%; left:${g.x}%; top:${g.y}%; background-color:${getClubColor(g.p)}; transform:translate(-50%,-50%);"></div>`;
-            html += `<span style="position:absolute; font-size:9px; color:#000; font-weight:bold; left:${g.x}%; top:${g.y}%; transform:translate(8px,-8px); background:rgba(255,255,255,0.7); padding:1px;">${g.p}</span>`;
+            html += `<div style="position:absolute; width:12px; height:12px; border:1.5px solid white; border-radius:50%; left:${g.x}%; top:${g.y}%; background-color:${getClubColor(g.p)}; transform:translate(-50%,-50%);"></div><span style="position:absolute; font-size:9px; color:#000; font-weight:bold; left:${g.x}%; top:${g.y}%; transform:translate(8px,-8px); background:rgba(255,255,255,0.7); padding:1px;">${g.p}</span>`;
         });
         html += `</div>`; area.innerHTML = html;
         html2canvas(area, { scale: 2, useCORS: true }).then(canvas => {
             const imgData = canvas.toDataURL("image/jpeg", 0.9);
-            const link = document.createElement('a'); link.download = `Driving_${Date.now()}.jpg`;
-            link.href = imgData; document.body.appendChild(link); link.click(); document.body.removeChild(link); alert("Practica guardada");
+            const link = document.createElement('a'); link.download = `Practica_${Date.now()}.jpg`;
+            link.href = imgData; document.body.appendChild(link); link.click(); document.body.removeChild(link); alert("Imagen guardada");
         });
     }
 
-    function calculateLiveScores(r) {
-        let g = 0, n = 0; const c = COURSES[r.campo];
-        for(let i=1; i<=18; i++) { let s = r.holeStats[i]?.score; if(s) { g += s; n += (s - c.pars[i] - (r.handicap >= c.hcp[i] ? 1 : 0)); } }
-        return { g, n };
-    }
-
-    function updateHoleScreenStats(r) {
-        let sc = calculateLiveScores(r); let totalPar = getCourseTotalPar(r.campo);
-        document.getElementById('hole-screen-summary-vals').innerHTML = `<span>PAR: ${totalPar}</span><span>GROSS: ${sc.g}</span><span>NETO: ${sc.n > 0 ? '+' : ''}${sc.n}</span>`;
-        document.getElementById('global-stats').innerHTML = getStatsHTML(r);
-        for(let i=1; i<=18; i++) {
-            const btn = document.getElementById(`btn-hoyo-${i}`);
-            if(r.holeStats[i] && r.holeStats[i].score > 0) btn.classList.add('btn-completed');
-            else btn.classList.remove('btn-completed');
-        }
-    }
-
-    function updateMapScreen() {
-        const r = rounds.find(x => x.id === currentId); if(!r) return;
-        let sc = calculateLiveScores(r); const c = COURSES[r.campo]; let totalPar = getCourseTotalPar(r.campo);
-        let ydsA = c.yardas["Azul"][currentHoyo] || '0';
-        let ydsB = c.yardas["Blanca"][currentHoyo] || '0';
-        let ydsInfo = ` - A: ${ydsA} Yds / B: ${ydsB} Yds`;
-        document.getElementById('current-hole-title').innerText = `HOYO ${currentHoyo} (Par ${c.pars[currentHoyo]} - Hcp ${c.hcp[currentHoyo]}${ydsInfo})`;
-        document.getElementById('map-live-scores').innerText = `P: ${totalPar} | G: ${sc.g} | N: ${sc.n > 0 ? '+' : ''}${sc.n}`;
-        renderMarks('marks-container', true, "all");
-    }
-
-    function askScore() {
-        const r = rounds.find(x => x.id === currentId); if(!r) return;
-        scoreTemp = Math.max(1, r.golpes.filter(g => g.h === currentHoyo).length + 2);
-        document.getElementById('score-title').innerText = "Hoyo " + currentHoyo;
-        document.getElementById('score-val-display').innerText = scoreTemp;
-        setGIR(false); document.getElementById('v-putts').innerText = "2"; document.getElementById('v-pen').innerText = "0"; document.getElementById('v-bnk').innerText = "0"; document.getElementById('v-hzd').innerText = "0"; document.getElementById('v-ob').innerText = "0";
-        changeScreen('screen-score');
-    }
-
-    function startNewRound() {
-        const hVal = Math.max(0, parseInt(document.getElementById('hcap-value').value) || 0);
-        const cName = document.getElementById('course-select').value;
-        localStorage.setItem('last_hcap_used', hVal);
-        currentId = Date.now();
-        rounds.push({ id: currentId, nombre: new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), handicap: hVal, campo: cName, golpes: [], holeStats: {} });
-        save(); changeScreen('step-hole');
-    }
-
-    function save() { localStorage.setItem(DB_NAME, JSON.stringify(rounds)); }
-    function saveHoleData() {
-        let r = rounds.find(x => x.id === currentId); r.holeStats[currentHoyo] = { score: scoreTemp, gir: girTemp, putts: parseInt(document.getElementById('v-putts').innerText), pen: parseInt(document.getElementById('v-pen').innerText), bnk: parseInt(document.getElementById('v-bnk').innerText), hzd: parseInt(document.getElementById('v-hzd').innerText), ob: parseInt(document.getElementById('v-ob').innerText) };
-        save(); changeScreen('step-hole');
-    }
-
-    function toggleSummaryView(v) {
-        document.getElementById('view-map').style.display = v==='map'?'flex':'none';
-        document.getElementById('view-stats').style.display = v==='stats'?'flex':'none';
-        document.getElementById('tab-map').style.background = v==='map'?'var(--primary)':'white';
-        document.getElementById('tab-map').style.color = v==='map'?'white':'black';
-        document.getElementById('tab-stats').style.background = v==='stats'?'var(--primary)':'white';
-        document.getElementById('tab-stats').style.color = v==='stats'?'white':'black';
-        updateSummaryData();
-    }
-
-    function updateSummaryData() {
-        let r = rounds.find(x => x.id === currentId); if(!r) return;
-        const cData = COURSES[r.campo];
-        document.getElementById('summary-stats-bar-top').innerHTML = getStatsHTML(r);
-        let sBody = document.getElementById('scorecard-body'); sBody.innerHTML = ""; let totals = {g:0, n:0, gir:0, pen:0, bnk:0, hzd:0, ob:0};
-        for(let i=1; i<=18; i++) {
-            let h = r.holeStats[i] || {score:0, gir:false, putts:0, pen:0, bnk:0, hzd:0, ob:0};
-            let netH = h.score ? (h.score - cData.pars[i] - (r.handicap >= cData.hcp[i] ? 1 : 0)) : '-';
-            if(h.score) { totals.g += h.score; totals.n += netH; if(h.gir) totals.gir++; totals.pen += h.pen; totals.bnk += h.bnk; totals.hzd += h.hzd; totals.ob += h.ob; }
-            let rowClass = (i % 2 === 0) ? 'even-row' : '';
-            sBody.innerHTML += `<tr class="${rowClass}"><td>${i}</td><td>${cData.hcp[i]}</td><td>${cData.pars[i]}</td><td><b>${h.score||'-'}</b></td><td>${netH!=='-'?(netH>0?'+':''):''}${netH}</td><td>${h.gir?'G':'-'}</td><td>${h.putts}</td><td>${h.pen}</td><td>${h.bnk}</td><td>${h.hzd}</td><td>${h.ob}</td></tr>`;
-        }
-        let totalPar = getCourseTotalPar(r.campo);
-        document.getElementById('net-results').innerHTML = `PAR: ${totalPar} | GROSS: ${totals.g} | NETO: ${totals.n > 0 ? '+' : ''}${totals.n}`;
-        document.getElementById('summary-stats-bar-bottom').innerHTML = `<div style="color:var(--gir)" class="stat-box"><span class="stat-val">${totals.gir}</span>GIR</div><div style="color:red" class="stat-box"><span class="stat-val">${totals.pen}</span>Penalidades</div><div style="color:#795548" class="stat-box"><span class="stat-val">${totals.bnk}</span>Bunker</div><div style="color:#0288d1" class="stat-box"><span class="stat-val">${totals.hzd}</span>Hazard</div><div style="color:#d32f2f" class="stat-box"><span class="stat-val">${totals.ob}</span>Fuera Cancha</div>`;
-        renderMarks('summary-marks-container', false, document.getElementById('summary-filter').value);
-    }
-
-    function showHistory() {
-        rounds = JSON.parse(localStorage.getItem(DB_NAME)) || [];
-        let list = document.getElementById('history-list'); list.innerHTML = "";
-        if(rounds.length === 0) list.innerHTML = "<p style='margin-top:20px;'>No hay rondas guardadas.</p>";
-        else {
-            [...rounds].reverse().forEach(r => {
-                let wrap = document.createElement('div'); wrap.className = "history-item";
-                let bOpen = document.createElement('button'); bOpen.className = "btn-sec history-btn"; bOpen.innerText = r.nombre + " - " + r.campo;
-                bOpen.onclick = () => { currentId = r.id; changeScreen('step-hole'); };
-                let bDel = document.createElement('button'); bDel.className = "btn-danger"; bDel.innerText = "Borrar";
-                bDel.onclick = () => { if(confirm("Deseas borrar esta ronda definitivamente?")) { rounds = rounds.filter(x => x.id !== r.id); save(); showHistory(); } };
-                wrap.appendChild(bOpen); wrap.appendChild(bDel); list.appendChild(wrap);
-            });
-        }
-        changeScreen('screen-history');
-    }
-
-    function exportAsJPG() {
-        const r = rounds.find(x => x.id === currentId); if(!r) return;
-        const area = document.getElementById('capture-area'); let sc = calculateLiveScores(r); let totalPar = getCourseTotalPar(r.campo);
-        let html = `<h1 style="text-align:center; font-family:sans-serif; margin-bottom:10px;">${r.nombre} - ${r.campo}</h1>`;
-        html += `<p style="text-align:center; margin-bottom:15px; font-weight:bold; font-family:sans-serif;">Hcp ${r.handicap} | PAR: ${totalPar} | GROSS: ${sc.g} | NETO: ${sc.n > 0 ? '+' : ''}${sc.n}</p>`;
-        html += `<table style="width:100%; border-collapse:collapse; margin-bottom:20px; border:1px solid #000;">${document.getElementById('source-table').innerHTML}</table>`;
-        html += `<div style="position:relative; width:75%; margin: 0 auto; border:1px solid #000;"><img src="mapa.jpg" style="width:100%; height:auto; display:block">`;
-        r.golpes.forEach(g => {
-            html += `<div style="position:absolute; width:12px; height:12px; border:1.5px solid white; border-radius:50%; left:${g.x}%; top:${g.y}%; background-color:${getClubColor(g.p)}; transform:translate(-50%,-50%);"></div>`;
-            html += `<span style="position:absolute; font-size:9px; color:#000; font-weight:bold; left:${g.x}%; top:${g.y}%; transform:translate(8px,-8px); background:rgba(255,255,255,0.7); padding:1px;">${g.p}-H${g.h}</span>`;
-        });
-        html += `</div>`; area.innerHTML = html;
-        html2canvas(area, { scale: 2, useCORS: true }).then(canvas => {
-            const imgData = canvas.toDataURL("image/jpeg", 0.9); const link = document.createElement('a');
-            link.download = `Golf_${r.id}.jpg`; link.href = imgData; document.body.appendChild(link);
-            link.click(); document.body.removeChild(link); alert("Imagen guardada");
-        });
-    }
-
+    function getCourseTotalPar(courseName) { const c = COURSES[courseName]; return c ? Object.values(c.pars).reduce((a, b) => a + b, 0) : 72; }
+    function calculateLiveScores(r) { let g = 0, n = 0; const c = COURSES[r.campo]; for(let i=1; i<=18; i++) { let s = r.holeStats[i]?.score; if(s) { g += s; n += (s - c.pars[i] - (r.handicap >= c.hcp[i] ? 1 : 0)); } } return { g, n }; }
+    function updateHoleScreenStats(r) { let sc = calculateLiveScores(r); let totalPar = getCourseTotalPar(r.campo); document.getElementById('hole-screen-summary-vals').innerHTML = `<span>PAR: ${totalPar}</span><span>GROSS: ${sc.g}</span><span>NETO: ${sc.n > 0 ? '+' : ''}${sc.n}</span>`; document.getElementById('global-stats').innerHTML = getStatsHTML(r); for(let i=1; i<=18; i++) { const btn = document.getElementById(`btn-hoyo-${i}`); if(r.holeStats[i] && r.holeStats[i].score > 0) btn.classList.add('btn-completed'); else btn.classList.remove('btn-completed'); } }
+    function updateMapScreen() { const r = rounds.find(x => x.id === currentId); if(!r) return; let sc = calculateLiveScores(r); const c = COURSES[r.campo]; let totalPar = getCourseTotalPar(r.campo); let ydsA = c.yardas["Azul"][currentHoyo] || '0'; let ydsB = c.yardas["Blanca"][currentHoyo] || '0'; document.getElementById('current-hole-title').innerText = `HOYO ${currentHoyo} (Par ${c.pars[currentHoyo]} - Hcp ${c.hcp[currentHoyo]} - A: ${ydsA} Yds / B: ${ydsB} Yds)`; document.getElementById('map-live-scores').innerText = `P: ${totalPar} | G: ${sc.g} | N: ${sc.n > 0 ? '+' : ''}${sc.n}`; renderMarks('marks-container', true, "all"); }
+    function askScore() { const r = rounds.find(x => x.id === currentId); if(!r) return; scoreTemp = Math.max(1, r.golpes.filter(g => g.h === currentHoyo).length + 2); document.getElementById('score-title').innerText = "Hoyo " + currentHoyo; document.getElementById('score-val-display').innerText = scoreTemp; setGIR(false); document.getElementById('v-putts').innerText = "2"; document.getElementById('v-pen').innerText = "0"; document.getElementById('v-bnk').innerText = "0"; document.getElementById('v-hzd').innerText = "0"; document.getElementById('v-ob').innerText = "0"; changeScreen('screen-score'); }
+    function startNewRound() { const hVal = Math.max(0, parseInt(document.getElementById('hcap-value').value) || 0); const cName = document.getElementById('course-select').value; localStorage.setItem('last_hcap_used', hVal); currentId = Date.now(); rounds.push({ id: currentId, nombre: new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), handicap: hVal, campo: cName, golpes: [], holeStats: {} }); save(); changeScreen('step-hole'); }
+    function renderMarks(containerId, currentOnly, filterPalo = "all") { let cont = document.getElementById(containerId); if(!cont) return; cont.innerHTML = ""; let r = rounds.find(x => x.id === currentId); if(!r) return; let list = r.golpes; if(currentOnly) list = list.filter(g => g.h === currentHoyo); if(filterPalo !== "all") list = list.filter(g => g.p === filterPalo); list.forEach(g => { let d = document.createElement('div'); d.className = 'dot'; d.style.left = g.x + "%"; d.style.top = g.y + "%"; d.style.backgroundColor = getClubColor(g.p); let l = document.createElement('span'); l.className = 'dot-label'; l.innerText = g.p + "-H" + g.h; d.appendChild(l); cont.appendChild(d); }); }
+    function saveHoleData() { let r = rounds.find(x => x.id === currentId); r.holeStats[currentHoyo] = { score: scoreTemp, gir: girTemp, putts: parseInt(document.getElementById('v-putts').innerText), pen: parseInt(document.getElementById('v-pen').innerText), bnk: parseInt(document.getElementById('v-bnk').innerText), hzd: parseInt(document.getElementById('v-hzd').innerText), ob: parseInt(document.getElementById('v-ob').innerText) }; save(); changeScreen('step-hole'); }
+    function getStatsHTML(r) { const cData = COURSES[r.campo]; let c = { e: 0, bir: 0, par: 0, bog: 0, pbog: 0 }; Object.keys(r.holeStats).forEach(h => { let s = r.holeStats[h].score, diff = s - cData.pars[h]; if(diff <= -2) c.e++; else if(diff === -1) c.bir++; else if(diff === 0) c.par++; else if(diff === 1) c.bog++; else c.pbog++; }); return `<div style="color:#d4af37" class="stat-box"><span class="stat-val">${c.e}</span>Aguila</div><div style="color:blue" class="stat-box"><span class="stat-val">${c.bir}</span>Birdie</div><div style="color:green" class="stat-box"><span class="stat-val">${c.par}</span>Par</div><div style="color:orange" class="stat-box"><span class="stat-val">${c.bog}</span>Boggey</div><div style="color:red" class="stat-box"><span class="stat-val">${c.pbog}</span>+Boggey</div>`; }
+    function toggleSummaryView(v) { document.getElementById('view-map').style.display = v==='map'?'flex':'none'; document.getElementById('view-stats').style.display = v==='stats'?'flex':'none'; document.getElementById('tab-map').style.background = v==='map'?'var(--primary)':'white'; document.getElementById('tab-map').style.color = v==='map'?'white':'black'; document.getElementById('tab-stats').style.background = v==='stats'?'var(--primary)':'white'; document.getElementById('tab-stats').style.color = v==='stats'?'white':'black'; updateSummaryData(); }
+    function updateSummaryData() { let r = rounds.find(x => x.id === currentId); if(!r) return; const cData = COURSES[r.campo]; document.getElementById('summary-stats-bar-top').innerHTML = getStatsHTML(r); let sBody = document.getElementById('scorecard-body'); sBody.innerHTML = ""; let totals = {g:0, n:0, gir:0, pen:0, bnk:0, hzd:0, ob:0}; for(let i=1; i<=18; i++) { let h = r.holeStats[i] || {score:0, gir:false, putts:0, pen:0, bnk:0, hzd:0, ob:0}; let netH = h.score ? (h.score - cData.pars[i] - (r.handicap >= cData.hcp[i] ? 1 : 0)) : '-'; if(h.score) { totals.g += h.score; totals.n += netH; if(h.gir) totals.gir++; totals.pen += h.pen; totals.bnk += h.bnk; totals.hzd += h.hzd; totals.ob += h.ob; } let rowClass = (i % 2 === 0) ? 'even-row' : ''; sBody.innerHTML += `<tr class="${rowClass}"><td>${i}</td><td>${cData.hcp[i]}</td><td>${cData.pars[i]}</td><td><b>${h.score||'-'}</b></td><td>${netH!=='-'?(netH>0?'+':''):''}${netH}</td><td>${h.gir?'G':'-'}</td><td>${h.putts}</td><td>${h.pen}</td><td>${h.bnk}</td><td>${h.hzd}</td><td>${h.ob}</td></tr>`; } let totalPar = getCourseTotalPar(r.campo); document.getElementById('net-results').innerHTML = `PAR: ${totalPar} | GROSS: ${totals.g} | NETO: ${totals.n > 0 ? '+' : ''}${totals.n}`; document.getElementById('summary-stats-bar-bottom').innerHTML = `<div style="color:var(--gir)" class="stat-box"><span class="stat-val">${totals.gir}</span>GIR</div><div style="color:red" class="stat-box"><span class="stat-val">${totals.pen}</span>Penalidades</div><div style="color:#795548" class="stat-box"><span class="stat-val">${totals.bnk}</span>Bunker</div><div style="color:#0288d1" class="stat-box"><span class="stat-val">${totals.hzd}</span>Hazard</div><div style="color:#d32f2f" class="stat-box"><span class="stat-val">${totals.ob}</span>Fuera Cancha</div>`; renderMarks('summary-marks-container', false, document.getElementById('summary-filter').value); }
+    function showHistory() { rounds = JSON.parse(localStorage.getItem(DB_NAME)) || []; let list = document.getElementById('history-list'); list.innerHTML = ""; if(rounds.length === 0) list.innerHTML = "<p style='margin-top:20px;'>No hay rondas guardadas.</p>"; else { [...rounds].reverse().forEach(r => { let wrap = document.createElement('div'); wrap.className = "history-item"; let bOpen = document.createElement('button'); bOpen.className = "btn-sec history-btn"; bOpen.innerText = r.nombre + " - " + r.campo; bOpen.onclick = () => { currentId = r.id; changeScreen('step-hole'); }; let bDel = document.createElement('button'); bDel.className = "btn-danger"; bDel.innerText = "Borrar"; bDel.onclick = () => { if(confirm("Deseas borrar esta ronda definitivamente?")) { rounds = rounds.filter(x => x.id !== r.id); save(); showHistory(); } }; wrap.appendChild(bOpen); wrap.appendChild(bDel); list.appendChild(wrap); }); } changeScreen('screen-history'); }
+    function exportAsJPG() { const r = rounds.find(x => x.id === currentId); if(!r) return; const area = document.getElementById('capture-area'); let sc = calculateLiveScores(r); let totalPar = getCourseTotalPar(r.campo); let html = `<h1 style="text-align:center; font-family:sans-serif; margin-bottom:10px;">${r.nombre} - ${r.campo}</h1>`; html += `<p style="text-align:center; margin-bottom:15px; font-weight:bold; font-family:sans-serif;">Hcp ${r.handicap} | PAR: ${totalPar} | GROSS: ${sc.g} | NETO: ${sc.n > 0 ? '+' : ''}${sc.n}</p>`; html += `<table style="width:100%; border-collapse:collapse; margin-bottom:20px; border:1px solid #000;">${document.getElementById('source-table').innerHTML}</table>`; html += `<div style="position:relative; width:75%; margin: 0 auto; border:1px solid #000;"><img src="mapa.jpg" style="width:100%; height:auto; display:block">`; r.golpes.forEach(g => { html += `<div style="position:absolute; width:12px; height:12px; border:1.5px solid white; border-radius:50%; left:${g.x}%; top:${g.y}%; background-color:${getClubColor(g.p)}; transform:translate(-50%,-50%);"></div><span style="position:absolute; font-size:9px; color:#000; font-weight:bold; left:${g.x}%; top:${g.y}%; transform:translate(8px,-8px); background:rgba(255,255,255,0.7); padding:1px;">${g.p}-H${g.h}</span>`; }); html += `</div>`; area.innerHTML = html; html2canvas(area, { scale: 2, useCORS: true }).then(canvas => { const imgData = canvas.toDataURL("image/jpeg", 0.9); const link = document.createElement('a'); link.download = `Golf_${r.id}.jpg`; link.href = imgData; document.body.appendChild(link); link.click(); document.body.removeChild(link); alert("Imagen guardada"); }); }
     function setGIR(v) { girTemp = v; document.getElementById('gir-si').style.background = v ? 'var(--gir)' : 'white'; document.getElementById('gir-si').style.color = v ? 'white' : 'var(--gir)'; document.getElementById('gir-no').style.background = !v ? 'var(--gir)' : 'white'; document.getElementById('gir-no').style.color = !v ? 'white' : 'var(--gir)'; }
     function updateVal(id, delta, min = 0) { let el = document.getElementById(id); el.innerText = Math.max(min, (parseInt(el.innerText) || 0) + delta); }
     function adjustScore(v) { scoreTemp = Math.max(1, scoreTemp + v); document.getElementById('score-val-display').innerText = scoreTemp; }
-    function closeClubs() { document.getElementById('club-selector-overlay').style.display = 'none'; }
     function jumpToHole(num) { currentHoyo = parseInt(num); updateMapScreen(); }
     function confirmExit() { if(confirm("Deseas salir al menu principal?")) { changeScreen('screen-menu'); } }
     function undoShot() { let r = rounds.find(x => x.id === currentId); if(r && r.golpes.length > 0) { r.golpes.pop(); save(); updateMapScreen(); } }
