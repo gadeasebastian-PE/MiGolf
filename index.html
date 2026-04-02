@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Mi Golf v11.9</title>
+    <title>Mi Golf v12.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root { --primary: #1b5e20; --bg: #f0f4f0; --white: #ffffff; --accent: #ff9800; --text: #333; --gir: #673ab7; }
@@ -287,7 +287,6 @@
     function saveDriving() { localStorage.setItem(DRIVING_DB, JSON.stringify(drivingShots)); }
     function closeClubs() { document.getElementById('club-selector-overlay').style.display = 'none'; }
 
-    // FUNCION CORREGIDA DE CONFIRMACION DE GOLPE
     function confirmShot(palo) {
         if(currentContext === 'game') {
             let r = rounds.find(x => x.id === currentId);
@@ -387,10 +386,11 @@
             html += `<div style="position:absolute; width:12px; height:12px; border:1.5px solid white; border-radius:50%; left:${g.x}%; top:${g.y}%; background-color:${getClubColor(g.p)}; transform:translate(-50%,-50%);"></div><span style="position:absolute; font-size:9px; color:#000; font-weight:bold; left:${g.x}%; top:${g.y}%; transform:translate(8px,-8px); background:rgba(255,255,255,0.7); padding:1px;">${g.p}</span>`;
         });
         html += `</div>`; area.innerHTML = html;
-        html2canvas(area, { scale: 2, useCORS: true }).then(canvas => {
-            const imgData = canvas.toDataURL("image/jpeg", 0.9);
+        // MEJORA CALIDAD JPG
+        html2canvas(area, { scale: 4, useCORS: true }).then(canvas => {
+            const imgData = canvas.toDataURL("image/jpeg", 1.0);
             const link = document.createElement('a'); link.download = `Practica_${Date.now()}.jpg`;
-            link.href = imgData; document.body.appendChild(link); link.click(); document.body.removeChild(link); alert("Imagen guardada");
+            link.href = imgData; document.body.appendChild(link); link.click(); document.body.removeChild(link); alert("Imagen de alta calidad guardada");
         });
     }
 
@@ -406,13 +406,18 @@
     function toggleSummaryView(v) { document.getElementById('view-map').style.display = v==='map'?'flex':'none'; document.getElementById('view-stats').style.display = v==='stats'?'flex':'none'; document.getElementById('tab-map').style.background = v==='map'?'var(--primary)':'white'; document.getElementById('tab-map').style.color = v==='map'?'white':'black'; document.getElementById('tab-stats').style.background = v==='stats'?'var(--primary)':'white'; document.getElementById('tab-stats').style.color = v==='stats'?'white':'black'; updateSummaryData(); }
     function updateSummaryData() { let r = rounds.find(x => x.id === currentId); if(!r) return; const cData = COURSES[r.campo]; document.getElementById('summary-stats-bar-top').innerHTML = getStatsHTML(r); let sBody = document.getElementById('scorecard-body'); sBody.innerHTML = ""; let totals = {g:0, n:0, gir:0, pen:0, bnk:0, hzd:0, ob:0}; for(let i=1; i<=18; i++) { let h = r.holeStats[i] || {score:0, gir:false, putts:0, pen:0, bnk:0, hzd:0, ob:0}; let netH = h.score ? (h.score - cData.pars[i] - (r.handicap >= cData.hcp[i] ? 1 : 0)) : '-'; if(h.score) { totals.g += h.score; totals.n += netH; if(h.gir) totals.gir++; totals.pen += h.pen; totals.bnk += h.bnk; totals.hzd += h.hzd; totals.ob += h.ob; } let rowClass = (i % 2 === 0) ? 'even-row' : ''; sBody.innerHTML += `<tr class="${rowClass}"><td>${i}</td><td>${cData.hcp[i]}</td><td>${cData.pars[i]}</td><td><b>${h.score||'-'}</b></td><td>${netH!=='-'?(netH>0?'+':''):''}${netH}</td><td>${h.gir?'G':'-'}</td><td>${h.putts}</td><td>${h.pen}</td><td>${h.bnk}</td><td>${h.hzd}</td><td>${h.ob}</td></tr>`; } let totalPar = getCourseTotalPar(r.campo); document.getElementById('net-results').innerHTML = `PAR: ${totalPar} | GROSS: ${totals.g} | NETO: ${totals.n > 0 ? '+' : ''}${totals.n}`; document.getElementById('summary-stats-bar-bottom').innerHTML = `<div style="color:var(--gir)" class="stat-box"><span class="stat-val">${totals.gir}</span>GIR</div><div style="color:red" class="stat-box"><span class="stat-val">${totals.pen}</span>Penalidades</div><div style="color:#795548" class="stat-box"><span class="stat-val">${totals.bnk}</span>Bunker</div><div style="color:#0288d1" class="stat-box"><span class="stat-val">${totals.hzd}</span>Hazard</div><div style="color:#d32f2f" class="stat-box"><span class="stat-val">${totals.ob}</span>Fuera Cancha</div>`; renderMarks('summary-marks-container', false, document.getElementById('summary-filter').value); }
     function showHistory() { rounds = JSON.parse(localStorage.getItem(DB_NAME)) || []; let list = document.getElementById('history-list'); list.innerHTML = ""; if(rounds.length === 0) list.innerHTML = "<p style='margin-top:20px;'>No hay rondas guardadas.</p>"; else { [...rounds].reverse().forEach(r => { let wrap = document.createElement('div'); wrap.className = "history-item"; let bOpen = document.createElement('button'); bOpen.className = "btn-sec history-btn"; bOpen.innerText = r.nombre + " - " + r.campo; bOpen.onclick = () => { currentId = r.id; changeScreen('step-hole'); }; let bDel = document.createElement('button'); bDel.className = "btn-danger"; bDel.innerText = "Borrar"; bDel.onclick = () => { if(confirm("Deseas borrar esta ronda definitivamente?")) { rounds = rounds.filter(x => x.id !== r.id); save(); showHistory(); } }; wrap.appendChild(bOpen); wrap.appendChild(bDel); list.appendChild(wrap); }); } changeScreen('screen-history'); }
-    function exportAsJPG() { const r = rounds.find(x => x.id === currentId); if(!r) return; const area = document.getElementById('capture-area'); let sc = calculateLiveScores(r); let totalPar = getCourseTotalPar(r.campo); let html = `<h1 style="text-align:center; font-family:sans-serif; margin-bottom:10px;">${r.nombre} - ${r.campo}</h1>`; html += `<p style="text-align:center; margin-bottom:15px; font-weight:bold; font-family:sans-serif;">Hcp ${r.handicap} | PAR: ${totalPar} | GROSS: ${sc.g} | NETO: ${sc.n > 0 ? '+' : ''}${sc.n}</p>`; html += `<table style="width:100%; border-collapse:collapse; margin-bottom:20px; border:1px solid #000;">${document.getElementById('source-table').innerHTML}</table>`; html += `<div style="position:relative; width:75%; margin: 0 auto; border:1px solid #000;"><img src="mapa.jpg" style="width:100%; height:auto; display:block">`; r.golpes.forEach(g => { html += `<div style="position:absolute; width:12px; height:12px; border:1.5px solid white; border-radius:50%; left:${g.x}%; top:${g.y}%; background-color:${getClubColor(g.p)}; transform:translate(-50%,-50%);"></div><span style="position:absolute; font-size:9px; color:#000; font-weight:bold; left:${g.x}%; top:${g.y}%; transform:translate(8px,-8px); background:rgba(255,255,255,0.7); padding:1px;">${g.p}-H${g.h}</span>`; }); html += `</div>`; area.innerHTML = html; html2canvas(area, { scale: 2, useCORS: true }).then(canvas => { const imgData = canvas.toDataURL("image/jpeg", 0.9); const link = document.createElement('a'); link.download = `Golf_${r.id}.jpg`; link.href = imgData; document.body.appendChild(link); link.click(); document.body.removeChild(link); alert("Imagen guardada"); }); }
+    function exportAsJPG() { const r = rounds.find(x => x.id === currentId); if(!r) return; const area = document.getElementById('capture-area'); let sc = calculateLiveScores(r); let totalPar = getCourseTotalPar(r.campo); let html = `<h1 style="text-align:center; font-family:sans-serif; margin-bottom:10px;">${r.nombre} - ${r.campo}</h1>`; html += `<p style="text-align:center; margin-bottom:15px; font-weight:bold; font-family:sans-serif;">Hcp ${r.handicap} | PAR: ${totalPar} | GROSS: ${sc.g} | NETO: ${sc.n > 0 ? '+' : ''}${sc.n}</p>`; html += `<table style="width:100%; border-collapse:collapse; margin-bottom:20px; border:1px solid #000;">${document.getElementById('source-table').innerHTML}</table>`; html += `<div style="position:relative; width:75%; margin: 0 auto; border:1px solid #000;"><img src="mapa.jpg" style="width:100%; height:auto; display:block">`; r.golpes.forEach(g => { html += `<div style="position:absolute; width:12px; height:12px; border:1.5px solid white; border-radius:50%; left:${g.x}%; top:${g.y}%; background-color:${getClubColor(g.p)}; transform:translate(-50%,-50%);"></div><span style="position:absolute; font-size:9px; color:#000; font-weight:bold; left:${g.x}%; top:${g.y}%; transform:translate(8px,-8px); background:rgba(255,255,255,0.7); padding:1px;">${g.p}-H${g.h}</span>`; }); html += `</div>`; area.innerHTML = html;
+    // MEJORA CALIDAD JPG
+    html2canvas(area, { scale: 4, useCORS: true }).then(canvas => { const imgData = canvas.toDataURL("image/jpeg", 1.0); const link = document.createElement('a'); link.download = `Golf_${r.id}.jpg`; link.href = imgData; document.body.appendChild(link); link.click(); document.body.removeChild(link); alert("Imagen de alta calidad guardada"); }); }
+
     function setGIR(v) { girTemp = v; document.getElementById('gir-si').style.background = v ? 'var(--gir)' : 'white'; document.getElementById('gir-si').style.color = v ? 'white' : 'var(--gir)'; document.getElementById('gir-no').style.background = !v ? 'var(--gir)' : 'white'; document.getElementById('gir-no').style.color = !v ? 'white' : 'var(--gir)'; }
     function updateVal(id, delta, min = 0) { let el = document.getElementById(id); el.innerText = Math.max(min, (parseInt(el.innerText) || 0) + delta); }
     function adjustScore(v) { scoreTemp = Math.max(1, scoreTemp + v); document.getElementById('score-val-display').innerText = scoreTemp; }
+    function closeClubs() { document.getElementById('club-selector-overlay').style.display = 'none'; }
     function jumpToHole(num) { currentHoyo = parseInt(num); updateMapScreen(); }
     function confirmExit() { if(confirm("Deseas salir al menu principal?")) { changeScreen('screen-menu'); } }
     function undoShot() { let r = rounds.find(x => x.id === currentId); if(r && r.golpes.length > 0) { r.golpes.pop(); save(); updateMapScreen(); } }
+
 </script>
 </body>
 </html>
